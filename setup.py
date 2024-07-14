@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
-import app
+import dbsys
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="dbsys",
-    version=app.__version__,
+    version=dbsys.__version__,
     author="Mark Powers",
     author_email="mpoweru@lifsys.com",
     description="A library for managing database operations using SQLAlchemy and pandas",
