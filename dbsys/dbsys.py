@@ -19,6 +19,9 @@ class ColumnNotFoundError(DatabaseError):
     """Raised when a specified column is not found in the table."""
     pass
 
+# Ensure TableNotFoundError is included in __all__
+__all__ = ['DatabaseError', 'TableNotFoundError', 'ColumnNotFoundError', 'manage_db']
+
 def manage_db(database_url: str, table_name: str, operation: str, data: Optional[pd.DataFrame] = None, column_name: Optional[str] = None, row_identifier: Optional[Dict[str, Any]] = None) -> Optional[pd.DataFrame]:
     """
     Manage database tables using pandas dataframes and SQLAlchemy.
@@ -72,7 +75,12 @@ def manage_db(database_url: str, table_name: str, operation: str, data: Optional
         
         result = operations[operation]()
         
-        return pd.read_sql_table(table_name, engine) if operation not in ['dt', 'dc', 'dr'] else None
+        try:
+            return pd.read_sql_table(table_name, engine) if operation not in ['dt', 'dc', 'dr'] else None
+        except ValueError as ve:
+            if "Table lifsysdb not found" in str(ve):
+                raise TableNotFoundError(f"Table '{table_name}' not found in the database.")
+            raise
     except SQLAlchemyError as e:
         raise DatabaseError(f"Database operation failed: {str(e)}")
 
