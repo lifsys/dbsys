@@ -32,10 +32,12 @@ setup(
         "pandas>=1.0.0",
         "sqlalchemy>=1.3.0",
     ],
-    keywords="database sqlalchemy pandas",
+    keywords="database sqlalchemy pandas orm",
     project_urls={
         "Bug Tracker": "https://github.com/lifsys/dbsys/issues",
         "Documentation": "https://github.com/lifsys/dbsys/blob/main/README.md",
         "Source Code": "https://github.com/lifsys/dbsys",
     },
+    include_package_data=True,
+    package_data={"dbsys": ["py.typed"]},
 )
