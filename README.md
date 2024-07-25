@@ -87,3 +87,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Support
 
 If you encounter any problems or have any questions, please [open an issue](https://github.com/lifsys/dbsys/issues) on our GitHub repository.
+## About Lifsys, Inc
+
+Lifsys, Inc is an AI company dedicated to developing solutions for the future. For more information, visit [www.lifsys.com](https://www.lifsys.com).
