@@ -21,7 +21,7 @@ class ColumnNotFoundError(DatabaseError):
     """Raised when a specified column is not found in the table."""
     pass
 
-# Ensure TableNotFoundError is included in __all__
+# Ensure all classes and functions are included in __all__
 __all__ = ['DatabaseError', 'TableNotFoundError', 'ColumnNotFoundError', 'manage_db', 'DatabaseManager']
 
 def manage_db(database_url: str, table_name: str, operation: str, data: Optional[pd.DataFrame] = None, column_name: Optional[str] = None, row_identifier: Optional[Dict[str, Any]] = None) -> Optional[pd.DataFrame]:
