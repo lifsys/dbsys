@@ -16,7 +16,7 @@ pip install --upgrade dbsys
 For a specific version:
 
 ```
-pip install dbsys==0.1.3
+pip install dbsys==0.1.4
 ```
 
 ## Installation
