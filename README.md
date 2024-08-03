@@ -16,7 +16,7 @@ pip install --upgrade dbsys
 For a specific version:
 
 ```
-pip install dbsys==0.1.5
+pip install dbsys==0.1.6
 ```
 
 ## Installation
@@ -26,6 +26,14 @@ You can install dbsys using pip:
 ```
 pip install dbsys
 ```
+
+For development purposes, you can install the package with extra dependencies:
+
+```
+pip install dbsys[dev]
+```
+
+This will install additional packages useful for development, such as pytest, flake8, and mypy.
 
 ## Features
 

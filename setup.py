@@ -1,12 +1,20 @@
 from setuptools import setup, find_packages
-from dbsys import __version__
+import os
 
+# Get the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+# Read the version from __init__.py
+with open(os.path.join("dbsys", "__init__.py"), "r") as f:
+    for line in f:
+        if line.startswith("__version__"):
+            version = line.split("=")[1].strip().strip('"')
+            break
+
 setup(
     name="dbsys",
-    version=__version__,
+    version=version,
     author="Mark Powers",
     author_email="mpoweru@lifsys.com",
     description="A library for managing database operations using SQLAlchemy and pandas",
@@ -33,6 +41,15 @@ setup(
         "pandas>=1.0.0",
         "sqlalchemy>=1.3.0",
     ],
+    extras_require={
+        "dev": [
+            "pytest>=6.0",
+            "pytest-cov>=2.0",
+            "flake8>=3.9",
+            "black>=21.5b1",
+            "mypy>=0.800",
+        ],
+    },
     keywords="database sqlalchemy pandas orm data management",
     project_urls={
         "Bug Tracker": "https://github.com/lifsys/dbsys/issues",
