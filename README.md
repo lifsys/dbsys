@@ -7,6 +7,20 @@ dbsys is a Python library for managing database operations using SQLAlchemy and 
 
 ## Installation
 
+You can install the latest version of dbsys using pip:
+
+```
+pip install --upgrade dbsys
+```
+
+For a specific version:
+
+```
+pip install dbsys==0.1.3
+```
+
+## Installation
+
 You can install dbsys using pip:
 
 ```
