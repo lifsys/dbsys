@@ -43,11 +43,12 @@ setup(
     ],
     extras_require={
         "dev": [
-            "pytest>=6.0",
-            "pytest-cov>=2.0",
-            "flake8>=3.9",
-            "black>=21.5b1",
-            "mypy>=0.800",
+            "pytest>=7.0",
+            "pytest-cov>=3.0",
+            "flake8>=4.0",
+            "black>=22.0",
+            "mypy>=0.900",
+            "isort>=5.0",
         ],
     },
     keywords="database sqlalchemy pandas orm data management",

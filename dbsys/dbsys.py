@@ -28,6 +28,27 @@ def manage_db(database_url: str, table_name: str, operation: str, data: Optional
     """
     Manage database tables using pandas dataframes and SQLAlchemy.
 
+    Args:
+        database_url (str): URL of the database to connect to.
+        table_name (str): Name of the table to operate on.
+        operation (str): Operation to perform ('r', 'w', 'c', 'dt', 'dc', 'dr').
+        data (Optional[pd.DataFrame]): DataFrame to write or create table with.
+        column_name (Optional[str]): Name of the column to delete.
+        row_identifier (Optional[Dict[str, Any]]): Dictionary to identify the row to delete.
+
+    Returns:
+        Optional[pd.DataFrame]: DataFrame representing the current state of the table
+        after the operation, or None for delete operations.
+
+    Raises:
+        ValueError: If an invalid operation is specified or if required parameters are missing.
+        DatabaseError: If there's an error during database operations.
+        TableNotFoundError: If the specified table is not found in the database.
+        ColumnNotFoundError: If the specified column is not found in the table.
+    """
+    """
+    Manage database tables using pandas dataframes and SQLAlchemy.
+
     This function provides a high-level interface for common database operations,
     including reading, writing, creating tables, deleting tables, deleting columns, and deleting rows.
 

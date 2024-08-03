@@ -16,7 +16,7 @@ pip install --upgrade dbsys
 For a specific version:
 
 ```
-pip install dbsys==0.1.6
+pip install dbsys==0.1.7
 ```
 
 ## Installation
@@ -109,6 +109,15 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Support
 
 If you encounter any problems or have any questions, please [open an issue](https://github.com/lifsys/dbsys/issues) on our GitHub repository.
+
+## Changelog
+
+### 0.1.7
+- Minor code improvements and documentation updates
+- Prepared for PyPI update
+
+### 0.1.6
+- Added DatabaseManager to __init__ and __all__ lists
 ## About Lifsys, Inc
 
 Lifsys, Inc is an AI company dedicated to developing solutions for the future. For more information, visit [www.lifsys.com](https://www.lifsys.com).
