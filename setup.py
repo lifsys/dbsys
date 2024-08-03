@@ -24,6 +24,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Database",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
@@ -32,7 +33,7 @@ setup(
         "pandas>=1.0.0",
         "sqlalchemy>=1.3.0",
     ],
-    keywords="database sqlalchemy pandas orm",
+    keywords="database sqlalchemy pandas orm data management",
     project_urls={
         "Bug Tracker": "https://github.com/lifsys/dbsys/issues",
         "Documentation": "https://github.com/lifsys/dbsys/blob/main/README.md",
