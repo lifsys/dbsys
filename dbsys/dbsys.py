@@ -169,6 +169,23 @@ class DatabaseManager:
             raise DatabaseError(f"Database operation failed: {str(e)}")
         return self
 
+    def dedup(self, subset: Optional[List[str]] = None, keep: str = 'first') -> 'DatabaseManager':
+        """
+        Deduplicate the current DataFrame based on specified columns or all columns if not specified.
+        
+        Args:
+        subset (List[str] or None): List of column names to consider for deduplication. If None, use all columns.
+        keep (str): Which duplicates to keep {'first', 'last', False}. Default is 'first'.
+        
+        Returns:
+        DatabaseManager: The current instance, allowing for method chaining.
+        """
+        if self._data is None:
+            raise ValueError("No data to deduplicate. Use .read() first.")
+        
+        self._data = self._data.drop_duplicates(subset=subset, keep=keep)
+        return self
+
     def write(self, data: Optional[pd.DataFrame] = None) -> 'DatabaseManager':
         if not self._table_name:
             raise ValueError("Table name not set. Use .use_table() first.")
