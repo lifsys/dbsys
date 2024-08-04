@@ -52,6 +52,9 @@ def manage_db(database_url: str, table_name: str, operation: str, data: Optional
     This function provides a high-level interface for common database operations,
     including reading, writing, creating tables, deleting tables, deleting columns, and deleting rows.
 
+    Example:
+    DatabaseManager(get_api("lifsysdb", "lifsysdb")).read_db("contract_requirements").to_dict(orient='records')
+
     Args:
         database_url (str): URL of the database to connect to.
         table_name (str): Name of the table to operate on.
@@ -147,128 +150,155 @@ class DatabaseManager:
     def __init__(self, database_url: str):
         self.database_url = database_url
         self.engine = create_engine(database_url)
+        self._table_name = None
+        self._data = None
 
-    def read_db(self, table_name: str) -> pd.DataFrame:
-        """
-        Read the entire table from the database.
+    def use_table(self, table_name: str) -> 'DatabaseManager':
+        self._table_name = table_name
+        return self
 
-        Args:
-            table_name (str): Name of the table to read.
-
-        Returns:
-            pd.DataFrame: DataFrame containing the table data.
-
-        Raises:
-            TableNotFoundError: If the specified table is not found in the database.
-            DatabaseError: If there's an error during the database operation.
-        """
+    def read(self) -> 'DatabaseManager':
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
         try:
-            return pd.read_sql_table(table_name, self.engine)
+            self._data = pd.read_sql_table(self._table_name, self.engine)
         except ValueError as ve:
             if "Table not found" in str(ve):
-                raise TableNotFoundError(f"Table '{table_name}' not found in the database.")
+                raise TableNotFoundError(f"Table '{self._table_name}' not found in the database.")
             raise DatabaseError(f"Error reading table: {str(ve)}")
         except sa_exc.SQLAlchemyError as e:
             raise DatabaseError(f"Database operation failed: {str(e)}")
+        return self
 
-    def write_db(self, table_name: str, data: pd.DataFrame) -> None:
-        """
-        Write data to a table in the database, replacing existing data.
-
-        Args:
-            table_name (str): Name of the table to write to.
-            data (pd.DataFrame): DataFrame containing the data to write.
-
-        Raises:
-            ValueError: If the provided data is None or not a DataFrame.
-            DatabaseError: If there's an error during the database operation.
-        """
-        if data is None or not isinstance(data, pd.DataFrame):
-            raise ValueError("Data must be provided and must be a pandas DataFrame")
-        
+    def write(self, data: Optional[pd.DataFrame] = None) -> 'DatabaseManager':
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
+        if data is None and self._data is None:
+            raise ValueError("No data to write. Provide data or use .read() first.")
         try:
-            data.to_sql(table_name, self.engine, if_exists='replace', index=False)
+            (data if data is not None else self._data).to_sql(self._table_name, self.engine, if_exists='replace', index=False)
         except sa_exc.SQLAlchemyError as e:
             raise DatabaseError(f"Failed to write to table: {str(e)}")
+        return self
 
-    def create_db(self, table_name: str, data: pd.DataFrame) -> None:
-        """
-        Create a new table in the database.
-
-        Args:
-            table_name (str): Name of the new table to create.
-            data (pd.DataFrame): DataFrame containing the data for the new table.
-
-        Raises:
-            ValueError: If the provided data is None or not a DataFrame.
-            DatabaseError: If there's an error during the database operation.
-        """
-        if data is None or not isinstance(data, pd.DataFrame):
-            raise ValueError("Data must be provided and must be a pandas DataFrame")
-        
+    def create(self, data: pd.DataFrame) -> 'DatabaseManager':
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
         try:
-            data.to_sql(table_name, self.engine, if_exists='fail', index=False)
+            data.to_sql(self._table_name, self.engine, if_exists='fail', index=False)
+            self._data = data
         except sa_exc.SQLAlchemyError as e:
             raise DatabaseError(f"Failed to create table: {str(e)}")
+        return self
 
-    def delete_table(self, table_name: str) -> None:
-        """
-        Delete a table from the database.
-
-        Args:
-            table_name (str): Name of the table to delete.
-
-        Raises:
-            DatabaseError: If there's an error during the database operation.
-        """
+    def delete_table(self) -> 'DatabaseManager':
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
         try:
             with self.engine.connect() as connection:
-                connection.execute(f"DROP TABLE IF EXISTS {table_name}")
+                connection.execute(text(f"DROP TABLE IF EXISTS {self._table_name}"))
+            self._data = None
         except sa_exc.SQLAlchemyError as e:
             raise DatabaseError(f"Failed to delete table: {str(e)}")
+        return self
 
-    def delete_column(self, table_name: str, column_name: str) -> None:
-        """
-        Delete a column from a table in the database.
-
-        Args:
-            table_name (str): Name of the table.
-            column_name (str): Name of the column to delete.
-
-        Raises:
-            ValueError: If the column name is not provided.
-            DatabaseError: If there's an error during the database operation.
-        """
+    def delete_column(self, column_name: str) -> 'DatabaseManager':
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
         if not column_name:
             raise ValueError("Column name must be provided for delete column operation")
-        
         try:
             with self.engine.connect() as connection:
-                connection.execute(f"ALTER TABLE {table_name} DROP COLUMN IF EXISTS {column_name}")
+                connection.execute(text(f"ALTER TABLE {self._table_name} DROP COLUMN IF EXISTS {column_name}"))
+            if self._data is not None and column_name in self._data.columns:
+                self._data = self._data.drop(column_name, axis=1)
         except sa_exc.SQLAlchemyError as e:
             raise DatabaseError(f"Failed to delete column: {str(e)}")
+        return self
 
-    def delete_row(self, table_name: str, row_identifier: Dict[str, Any]) -> None:
-        """
-        Delete a row from a table in the database.
-
-        Args:
-            table_name (str): Name of the table.
-            row_identifier (Dict[str, Any]): Dictionary containing column:value pair to identify the row to delete.
-
-        Raises:
-            ValueError: If the row identifier is not provided.
-            DatabaseError: If there's an error during the database operation.
-        """
+    def delete_row(self, row_identifier: Dict[str, Any]) -> 'DatabaseManager':
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
         if not row_identifier:
             raise ValueError("Row identifier must be provided for delete row operation")
-        
         try:
-            conditions = " AND ".join([f"{key} = '{value}'" for key, value in row_identifier.items()])
+            conditions = " AND ".join([f"{key} = :{key}" for key in row_identifier.keys()])
             with self.engine.connect() as connection:
-                connection.execute(f"DELETE FROM {table_name} WHERE {conditions}")
+                connection.execute(text(f"DELETE FROM {self._table_name} WHERE {conditions}"), row_identifier)
+            if self._data is not None:
+                self._data = self._data.loc[~(self._data[list(row_identifier)] == pd.Series(row_identifier)).all(axis=1)]
         except sa_exc.SQLAlchemyError as e:
             raise DatabaseError(f"Failed to delete row: {str(e)}")
+        return self
+
+    def search(self, conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> 'DatabaseManager':
+        """
+        Search for rows in the current table that contain the given conditions.
+
+        Args:
+            conditions (Union[Dict[str, Any], str]): 
+                If dict: column-value pairs to search for.
+                If str: search term to look for in any column.
+            limit (Optional[int]): Maximum number of rows to return. If None, returns all matching rows.
+            case_sensitive (bool): If True, perform a case-sensitive search. Default is False.
+
+        Returns:
+            DatabaseManager: The current instance, allowing for method chaining.
+
+        Raises:
+            ValueError: If table name is not set or if conditions are invalid.
+            DatabaseError: If there's an error during the database operation.
+        """
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
+        
+        try:
+            metadata = MetaData()
+            table = Table(self._table_name, metadata, autoload_with=self.engine)
+            columns = table.columns.keys()
+
+            if isinstance(conditions, dict):
+                if not conditions:
+                    raise ValueError("Search conditions dictionary cannot be empty")
+                where_clauses = []
+                search_conditions = {}
+                for i, (col, val) in enumerate(conditions.items()):
+                    if val is None:
+                        raise ValueError(f"Search value for column '{col}' cannot be None")
+                    param_name = f"param_{i}"
+                    if case_sensitive:
+                        where_clauses.append(f'"{col}" LIKE :{param_name}')
+                    else:
+                        where_clauses.append(f'LOWER("{col}"::text) LIKE LOWER(:{param_name})')
+                    search_conditions[param_name] = f"%{val}%"
+                where_clause = " AND ".join(where_clauses)
+            elif isinstance(conditions, str):
+                if not conditions.strip():
+                    raise ValueError("Search string cannot be empty")
+                where_clauses = []
+                search_conditions = {"search_term": f"%{conditions}%"}
+                for col in columns:
+                    if case_sensitive:
+                        where_clauses.append(f'"{col}"::text LIKE :search_term')
+                    else:
+                        where_clauses.append(f'LOWER("{col}"::text) LIKE LOWER(:search_term)')
+                where_clause = " OR ".join(where_clauses)
+            else:
+                raise ValueError("conditions must be either a non-empty dictionary or a non-empty string")
+
+            query = f"SELECT * FROM {self._table_name} WHERE {where_clause}"
+            if limit is not None:
+                query += f" LIMIT {limit}"
+            
+            with self.engine.connect() as connection:
+                result = connection.execute(text(query), search_conditions)
+                self._data = pd.DataFrame(result.fetchall(), columns=result.keys())
+            return self
+        except sa_exc.SQLAlchemyError as e:
+            raise DatabaseError(f"Search operation failed: {str(e)}")
+
+    def get_data(self) -> Optional[pd.DataFrame]:
+        return self._data
 
 # Ensure all exceptions are included in __all__
 __all__ = ['DatabaseError', 'TableNotFoundError', 'ColumnNotFoundError', 'DatabaseManager']
