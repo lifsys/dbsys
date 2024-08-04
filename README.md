@@ -50,13 +50,13 @@ data = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'Alice'], 'age': [30, 2
 db.use_table("users").create(data)
 
 # Read the table
-result = db.use_table("users").read().get_data()
+result = db.use_table("users").read().results()
 print("Original data:")
 print(result)
 
 # Deduplicate the data
 db.dedup(subset=['name'], keep='first')
-result = db.get_data()
+result = db.results()
 print("\nDeduplicated data:")
 print(result)
 
@@ -65,7 +65,7 @@ new_data = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie'], 'age': [31, 26, 36
 db.use_table("users").write(new_data)
 
 # Search for users older than 30
-result = db.use_table("users").search({"age": 30}, limit=2).get_data()
+result = db.use_table("users").search({"age": 30}, limit=2).results()
 print("\nUsers older than 30:")
 print(result)
 
@@ -82,7 +82,7 @@ db.use_table("users").delete_table()
 db.use_table("users").restore("users_backup.json")
 
 # Verify restored data
-result = db.use_table("users").read().get_data()
+result = db.use_table("users").read().results()
 print("\nRestored data:")
 print(result)
 ```
@@ -106,7 +106,7 @@ The main class for interacting with the database.
 - `search(conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> DatabaseManager`: Search for rows in the current table that match the given conditions.
 - `backup(file_path: str, columns: Optional[List[str]] = None) -> DatabaseManager`: Backup the current table or specified columns to a JSON file.
 - `restore(file_path: str, mode: str = 'replace') -> DatabaseManager`: Restore data from a JSON file to the current table.
-- `get_data() -> Optional[pd.DataFrame]`: Get the current data stored in memory.
+- `results() -> Optional[pd.DataFrame]`: Get the current data stored in memory.
 - `dedup(subset: Optional[List[str]] = None, keep: str = 'first') -> DatabaseManager`: Deduplicate the current DataFrame based on specified columns.
 
 For detailed usage of each method, please refer to the docstrings in the source code.
