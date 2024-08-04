@@ -1,6 +1,6 @@
 # dbsys
 
-dbsys is a comprehensive Python library for managing database operations using SQLAlchemy and pandas. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, columns, and rows, as well as advanced features like searching, backup, and restore functionality.
+dbsys is a comprehensive Python library for managing database operations using SQLAlchemy and pandas. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, columns, and rows, as well as advanced features like searching, backup, restore functionality, and Redis support.
 
 [![PyPI version](https://badge.fury.io/py/dbsys.svg)](https://badge.fury.io/py/dbsys)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -10,11 +10,13 @@ dbsys is a comprehensive Python library for managing database operations using S
 
 - Easy-to-use interface for database operations
 - Support for multiple database types through SQLAlchemy
+- Redis support for pub/sub operations and key-value storage
 - Integration with pandas for efficient data handling
 - Comprehensive error handling and custom exceptions
 - Backup and restore functionality
 - Advanced search capabilities
 - Deduplication of data
+- Custom SQL query execution
 
 ## Installation
 
@@ -34,7 +36,7 @@ This will install additional packages useful for development, such as pytest, fl
 
 ## Quick Start
 
-Here's a comprehensive example of how to use dbsys:
+Here's a comprehensive example of how to use dbsys with SQL databases:
 
 ```python
 from dbsys import DatabaseManager
@@ -85,6 +87,40 @@ db.use_table("users").restore("users_backup.json")
 result = db.use_table("users").read().results()
 print("\nRestored data:")
 print(result)
+
+# Execute a custom SQL query
+result = db.execute_query("SELECT * FROM users WHERE age > 30").results()
+print("\nCustom query result:")
+print(result)
+```
+
+Example of using dbsys with Redis:
+
+```python
+from dbsys import DatabaseManager
+import time
+
+# Initialize the DatabaseManager with Redis
+db = DatabaseManager("redis://localhost:6379/0")
+
+# Publish a message
+db.pub("Hello, Redis!", "test_channel")
+
+# Subscribe to a channel and process messages
+def message_handler(channel, message):
+    print(f"Received on {channel}: {message}")
+
+db.sub("test_channel", handler=message_handler)
+
+# Publish and subscribe in one operation
+db.pubsub("Test message", "pub_channel", "sub_channel", handler=message_handler, wait=5)
+
+# Get stored messages
+messages = db.get_stored_messages("sub_channel")
+print("Stored messages:", messages)
+
+# Clear stored messages
+db.clear_stored_messages()
 ```
 
 ## API Reference
@@ -108,100 +144,24 @@ Initialize the DatabaseManager with a database URL.
 #### Methods
 
 - `use_table(table_name: str) -> DatabaseManager`
-  
-  Set the table to be used for subsequent operations.
-  
-  ```python
-  db.use_table("users")
-  ```
-
 - `read() -> DatabaseManager`
-  
-  Read the entire contents of the currently selected table into memory.
-  
-  ```python
-  db.use_table("users").read()
-  ```
-
 - `write(data: Optional[pd.DataFrame] = None) -> DatabaseManager`
-  
-  Write data to the currently selected table.
-  
-  ```python
-  db.use_table("users").write(new_data)
-  ```
-
 - `create(data: pd.DataFrame) -> DatabaseManager`
-  
-  Create a new table with the provided data.
-  
-  ```python
-  db.use_table("new_table").create(initial_data)
-  ```
-
 - `delete_table() -> DatabaseManager`
-  
-  Delete the currently selected table.
-  
-  ```python
-  db.use_table("old_table").delete_table()
-  ```
-
 - `delete_column(column_name: str) -> DatabaseManager`
-  
-  Delete a specific column from the currently selected table.
-  
-  ```python
-  db.use_table("users").delete_column("age")
-  ```
-
 - `delete_row(row_identifier: Dict[str, Any]) -> DatabaseManager`
-  
-  Delete a specific row from the currently selected table.
-  
-  ```python
-  db.use_table("users").delete_row({"id": 5})
-  ```
-
 - `search(conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> DatabaseManager`
-  
-  Search for rows in the current table that match the given conditions.
-  
-  ```python
-  db.use_table("users").search({"name": "Alice"}, limit=10)
-  ```
-
 - `backup(file_path: str, columns: Optional[List[str]] = None) -> DatabaseManager`
-  
-  Backup the current table or specified columns to a JSON file.
-  
-  ```python
-  db.use_table("users").backup("users_backup.json", columns=["name", "email"])
-  ```
-
 - `restore(file_path: str, mode: str = 'replace') -> DatabaseManager`
-  
-  Restore data from a JSON file to the current table.
-  
-  ```python
-  db.use_table("users").restore("users_backup.json", mode="append")
-  ```
-
 - `results() -> Optional[pd.DataFrame]`
-  
-  Get the current data stored in memory.
-  
-  ```python
-  result = db.use_table("users").read().results()
-  ```
-
 - `dedup(subset: Optional[List[str]] = None, keep: str = 'first') -> DatabaseManager`
-  
-  Deduplicate the current DataFrame based on specified columns.
-  
-  ```python
-  db.use_table("users").read().dedup(subset=["email"], keep="last")
-  ```
+- `execute_query(query: str, params: Optional[Dict[str, Any]] = None) -> DatabaseManager`
+- `pub(message: str, channel: str) -> DatabaseManager`
+- `sub(channel: str, handler: Optional[Callable[[str, str], None]] = None, exiton: str = "") -> DatabaseManager`
+- `pubsub(pub_message: str, pub_channel: str, sub_channel: str, handler: Optional[Callable[[str, str], None]] = None, exiton: str = "CLOSE", wait: Optional[int] = None) -> DatabaseManager`
+- `unsub(channel: Optional[str] = None) -> DatabaseManager`
+- `get_stored_messages(channel: str) -> List[str]`
+- `clear_stored_messages(channel: Optional[str] = None) -> DatabaseManager`
 
 For detailed usage of each method, including all parameters and return values, please refer to the docstrings in the source code.
 
@@ -211,9 +171,7 @@ dbsys provides custom exceptions for better error handling:
 
 - `DatabaseError`: Base exception for database operations.
 - `TableNotFoundError`: Raised when a specified table is not found in the database.
-- `ColumnNotFoun
-
-dError`: Raised when a specified column is not found in the table.
+- `ColumnNotFoundError`: Raised when a specified column is not found in the table.
 - `InvalidOperationError`: Raised when an invalid operation is attempted.
 
 ## Contributing
@@ -240,6 +198,13 @@ Lifsys, Inc is an AI company dedicated to developing innovative solutions for da
 
 ## Changelog
 
+### 0.4.0
+- Added Redis support for pub/sub operations and key-value storage
+- Implemented new methods: pub, sub, pubsub, unsub
+- Added message storage functionality for Redis operations
+- Improved error handling and logging
+- Updated documentation to reflect new Redis capabilities
+
 ### 0.3.2
 - Prepared for PyPI update
 - Reviewed codebase for corrections
@@ -247,22 +212,5 @@ Lifsys, Inc is an AI company dedicated to developing innovative solutions for da
 - Incremented version number
 - Improved error handling in delete_row method
 - Enhanced search functionality with case-sensitive option
-
-### 0.3.1
-- Previous update details
-
-### 0.3.0
-- Added comprehensive docstrings to all methods
-- Updated README with detailed API reference and examples
-- Improved error handling and type hints
-- Added backup and restore functionality
-- Implemented advanced search capabilities
-- Added deduplication feature
-
-### 0.2.5
-- Prepared for PyPI update
-- Reviewed codebase for corrections
-- Updated documentation and README
-- Incremented version number
 
 (... previous changelog entries ...)
