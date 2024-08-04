@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import logging
 from sqlalchemy.engine import Engine
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class DatabaseError(Exception):
