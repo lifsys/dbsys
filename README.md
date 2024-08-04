@@ -145,3 +145,42 @@ If you encounter any problems or have any questions, please [open an issue](http
 ## About Lifsys, Inc
 
 Lifsys, Inc is an AI company dedicated to developing solutions for the future. For more information, visit [www.lifsys.com](https://www.lifsys.com).
+# dbsys
+
+A Python package for managing database operations.
+
+## Version
+
+Current version: 0.1.1
+
+## Changes in this version
+
+- Updated type hints in dbsys.pyi
+- Minor code improvements and bug fixes
+
+## Installation
+
+```
+pip install dbsys
+```
+
+## Usage
+
+```python
+from dbsys import DatabaseManager
+
+# Initialize the DatabaseManager
+db_manager = DatabaseManager('sqlite:///example.db')
+
+# Perform operations
+db_manager.read()
+db_manager.delete_table()
+db_manager.delete_column('column_name')
+db_manager.delete_row({'id': 1})
+```
+
+For more detailed usage instructions, please refer to the documentation.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

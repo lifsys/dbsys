@@ -2,7 +2,7 @@
 A library for managing database operations using SQLAlchemy and pandas.
 """
 
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 import pandas as pd
 from sqlalchemy import create_engine, text, MetaData, Table
 from sqlalchemy import create_engine, exc as sa_exc
