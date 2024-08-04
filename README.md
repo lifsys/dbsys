@@ -204,10 +204,33 @@ db.read()
 # ... other operations
 ```
 
-## New in version 0.2.0
+## New in version 0.2.1
 
+- Added InvalidOperationError for better error handling
+- Improved type hints in dbsys.pyi
+- Updated documentation and README
+- Minor code improvements and bug fixes
+
+For more details, see the [documentation](link_to_docs).
+
+## Changelog
+
+### 0.2.1
+- Added InvalidOperationError for better error handling
+- Improved type hints in dbsys.pyi
+- Updated documentation and README
+- Minor code improvements and bug fixes
+
+### 0.2.0
 - Improved error handling
 - Added type hints
 - Updated documentation
 
-For more details, see the [documentation](link_to_docs).
+### 0.1.12
+- Prepared for PyPI update
+- Updated documentation and README
+- Reviewed codebase for corrections
+- Incremented version number
+- Updated minimum Python version to 3.8
+
+(... previous changelog entries ...)
