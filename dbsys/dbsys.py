@@ -2,12 +2,11 @@
 A library for managing database operations using SQLAlchemy and pandas.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 import pandas as pd
 from sqlalchemy import create_engine, text, MetaData, Table
 from sqlalchemy import create_engine, exc as sa_exc
 from sqlalchemy.exc import SQLAlchemyError
-import pandas as pd
 
 class DatabaseError(Exception):
     """Base exception for database operations."""
@@ -299,6 +298,5 @@ class DatabaseManager:
 
     def get_data(self) -> Optional[pd.DataFrame]:
         return self._data
-
-# Ensure all exceptions are included in __all__
-__all__ = ['DatabaseError', 'TableNotFoundError', 'ColumnNotFoundError', 'DatabaseManager']
+    
+    
