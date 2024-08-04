@@ -534,7 +534,7 @@ class DatabaseManager:
             with open(file_path, 'w') as f:
                 f.write(json_data)
 
-            print(f"Backup created successfully at {file_path}")
+            logger.info(f"{self._table_name}: Backup created successfully at {file_path}")
             return self
 
         except (sa_exc.SQLAlchemyError, IOError) as e:
