@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional, Union, List
 from sqlalchemy import create_engine, text, MetaData, Table, exc as sa_exc
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine import Engine
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -479,6 +480,6 @@ class DatabaseManager:
         except (sa_exc.SQLAlchemyError, IOError, json.JSONDecodeError) as e:
             raise DatabaseError(f"Failed to restore from backup: {str(e)}")
 
-    def get_data(self) -> Optional[pd.DataFrame]:
+    def results(self) -> Optional[pd.DataFrame]:
         return self._data
     
