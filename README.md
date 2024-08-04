@@ -16,7 +16,7 @@ pip install --upgrade dbsys
 For a specific version:
 
 ```
-pip install dbsys==0.1.8
+pip install dbsys==0.1.9
 ```
 
 ## Installation
@@ -111,6 +111,12 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 If you encounter any problems or have any questions, please [open an issue](https://github.com/lifsys/dbsys/issues) on our GitHub repository.
 
 ## Changelog
+
+### 0.1.9
+- Prepared for PyPI update
+- Updated documentation
+- Reviewed codebase for corrections
+- Changed Development Status to Beta
 
 ### 0.1.8
 - Prepared for PyPI update
