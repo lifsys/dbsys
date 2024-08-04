@@ -7,6 +7,10 @@ import pandas as pd
 from sqlalchemy import create_engine, text, MetaData, Table
 from sqlalchemy import create_engine, exc as sa_exc
 from sqlalchemy.exc import SQLAlchemyError
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class DatabaseError(Exception):
     """Base exception for database operations."""
@@ -237,15 +241,50 @@ class DatabaseManager:
             raise ValueError("Table name not set. Use .use_table() first.")
         if not row_identifier:
             raise ValueError("Row identifier must be provided for delete row operation")
+        
+        logger.debug(f"Attempting to delete row with identifier: {row_identifier}")
+        
         try:
-            conditions = " AND ".join([f"{key} = :{key}" for key in row_identifier.keys()])
+            conditions = []
+            for key, value in row_identifier.items():
+                if value is None:
+                    conditions.append(f'"{key}" IS NULL')
+                else:
+                    conditions.append(f'"{key}" = :{key}')
+            
+            where_clause = " AND ".join(conditions)
+            query = f"DELETE FROM {self._table_name} WHERE {where_clause}"
+            
+            logger.debug(f"Executing SQL query: {query}")
+            logger.debug(f"With parameters: {row_identifier}")
+            
             with self.engine.connect() as connection:
-                connection.execute(text(f"DELETE FROM {self._table_name} WHERE {conditions}"), row_identifier)
+                result = connection.execute(
+                    text(query),
+                    {k: v for k, v in row_identifier.items() if v is not None}
+                )
+                connection.commit()
+                rows_deleted = result.rowcount
+                logger.info(f"{rows_deleted} row(s) deleted.")
+            
             if self._data is not None:
-                self._data = self._data.loc[~(self._data[list(row_identifier)] == pd.Series(row_identifier)).all(axis=1)]
+                logger.debug("Updating in-memory data")
+                original_length = len(self._data)
+                mask = pd.Series(True, index=self._data.index)
+                for col, val in row_identifier.items():
+                    if val is None:
+                        mask &= self._data[col].isnull()
+                    else:
+                        mask &= (self._data[col] != val)
+                self._data = self._data[mask]
+                new_length = len(self._data)
+                logger.debug(f"In-memory data rows reduced from {original_length} to {new_length}")
+            
+            return self
         except sa_exc.SQLAlchemyError as e:
+            logger.error(f"Failed to delete row: {str(e)}")
             raise DatabaseError(f"Failed to delete row: {str(e)}")
-        return self
+        
 
     def search(self, conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> 'DatabaseManager':
         """
