@@ -91,25 +91,119 @@ print(result)
 
 ### DatabaseManager
 
-The main class for interacting with the database.
+The main class for interacting with the database. It supports both SQL databases and Redis.
 
-#### Methods:
+#### Constructor
 
-- `__init__(database_url: str)`: Initialize the DatabaseManager with a database URL.
-- `use_table(table_name: str) -> DatabaseManager`: Set the table to be used for subsequent operations.
-- `read() -> DatabaseManager`: Read the entire contents of the currently selected table into memory.
-- `write(data: Optional[pd.DataFrame] = None) -> DatabaseManager`: Write data to the currently selected table.
-- `create(data: pd.DataFrame) -> DatabaseManager`: Create a new table with the provided data.
-- `delete_table() -> DatabaseManager`: Delete the currently selected table.
-- `delete_column(column_name: str) -> DatabaseManager`: Delete a specific column from the currently selected table.
-- `delete_row(row_identifier: Dict[str, Any]) -> DatabaseManager`: Delete a specific row from the currently selected table.
-- `search(conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> DatabaseManager`: Search for rows in the current table that match the given conditions.
-- `backup(file_path: str, columns: Optional[List[str]] = None) -> DatabaseManager`: Backup the current table or specified columns to a JSON file.
-- `restore(file_path: str, mode: str = 'replace') -> DatabaseManager`: Restore data from a JSON file to the current table.
-- `results() -> Optional[pd.DataFrame]`: Get the current data stored in memory.
-- `dedup(subset: Optional[List[str]] = None, keep: str = 'first') -> DatabaseManager`: Deduplicate the current DataFrame based on specified columns.
+```python
+DatabaseManager(connection_string: str)
+```
 
-For detailed usage of each method, please refer to the docstrings in the source code.
+Initialize the DatabaseManager with a database URL.
+
+- `connection_string`: The connection string for the database.
+  - For SQL databases, use SQLAlchemy connection strings.
+  - For Redis, use the format: "redis://[[username]:[password]]@localhost:6379/0"
+
+#### Methods
+
+- `use_table(table_name: str) -> DatabaseManager`
+  
+  Set the table to be used for subsequent operations.
+  
+  ```python
+  db.use_table("users")
+  ```
+
+- `read() -> DatabaseManager`
+  
+  Read the entire contents of the currently selected table into memory.
+  
+  ```python
+  db.use_table("users").read()
+  ```
+
+- `write(data: Optional[pd.DataFrame] = None) -> DatabaseManager`
+  
+  Write data to the currently selected table.
+  
+  ```python
+  db.use_table("users").write(new_data)
+  ```
+
+- `create(data: pd.DataFrame) -> DatabaseManager`
+  
+  Create a new table with the provided data.
+  
+  ```python
+  db.use_table("new_table").create(initial_data)
+  ```
+
+- `delete_table() -> DatabaseManager`
+  
+  Delete the currently selected table.
+  
+  ```python
+  db.use_table("old_table").delete_table()
+  ```
+
+- `delete_column(column_name: str) -> DatabaseManager`
+  
+  Delete a specific column from the currently selected table.
+  
+  ```python
+  db.use_table("users").delete_column("age")
+  ```
+
+- `delete_row(row_identifier: Dict[str, Any]) -> DatabaseManager`
+  
+  Delete a specific row from the currently selected table.
+  
+  ```python
+  db.use_table("users").delete_row({"id": 5})
+  ```
+
+- `search(conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> DatabaseManager`
+  
+  Search for rows in the current table that match the given conditions.
+  
+  ```python
+  db.use_table("users").search({"name": "Alice"}, limit=10)
+  ```
+
+- `backup(file_path: str, columns: Optional[List[str]] = None) -> DatabaseManager`
+  
+  Backup the current table or specified columns to a JSON file.
+  
+  ```python
+  db.use_table("users").backup("users_backup.json", columns=["name", "email"])
+  ```
+
+- `restore(file_path: str, mode: str = 'replace') -> DatabaseManager`
+  
+  Restore data from a JSON file to the current table.
+  
+  ```python
+  db.use_table("users").restore("users_backup.json", mode="append")
+  ```
+
+- `results() -> Optional[pd.DataFrame]`
+  
+  Get the current data stored in memory.
+  
+  ```python
+  result = db.use_table("users").read().results()
+  ```
+
+- `dedup(subset: Optional[List[str]] = None, keep: str = 'first') -> DatabaseManager`
+  
+  Deduplicate the current DataFrame based on specified columns.
+  
+  ```python
+  db.use_table("users").read().dedup(subset=["email"], keep="last")
+  ```
+
+For detailed usage of each method, including all parameters and return values, please refer to the docstrings in the source code.
 
 ## Error Handling
 

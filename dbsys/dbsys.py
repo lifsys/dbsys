@@ -31,6 +31,43 @@ class InvalidOperationError(DatabaseError):
     pass
 
 class DatabaseManager:
+    """
+    A versatile database management class that supports both SQL databases and Redis.
+
+    This class provides a high-level interface for common database operations,
+    including reading, writing, creating tables, deleting tables, columns, and rows,
+    as well as advanced features like searching, backup, and restore functionality.
+
+    Attributes:
+        _connection_string (str): The connection string for the database.
+        _table_name (str): The name of the currently selected table.
+        _data (pd.DataFrame): The data currently loaded in memory.
+        _message (str): The message to be published (for Redis).
+        _channel (str): The channel for publishing/subscribing (for Redis).
+        _pubsub (redis.client.PubSub): The PubSub object for Redis operations.
+        _subscriber_thread (threading.Thread): The thread for handling subscriptions.
+        _close_flag (threading.Event): An event flag for closing operations.
+        _close_message (str): The message that signals to close the connection.
+        _message_history (defaultdict): A dictionary to store message history.
+        _base (str): The type of database ('redis' or 'sql').
+        _redis_client (redis.Redis): The Redis client (for Redis operations).
+        _engine (sqlalchemy.engine.Engine): The SQLAlchemy engine (for SQL operations).
+
+    Args:
+        connection_string (str): The connection string for the database.
+            For SQL databases, use SQLAlchemy connection strings.
+            For Redis, use the format: "redis://[[username]:[password]]@localhost:6379/0"
+
+    Raises:
+        ValueError: If an unsupported database type is specified in the connection string.
+
+    Example:
+        >>> db = DatabaseManager("sqlite:///example.db")
+        >>> db.use_table("users").create(pd.DataFrame({'name': ['Alice', 'Bob'], 'age': [30, 25]}))
+        >>> result = db.read().results()
+        >>> print(result)
+    """
+
     def __init__(self, connection_string: str):
         self._connection_string = connection_string
         self._table_name = None
@@ -57,6 +94,18 @@ class DatabaseManager:
             raise ValueError(f"Unsupported database type: {parsed_url.scheme}")
 
     def use_table(self, table_name: str) -> 'DatabaseManager':
+        """
+        Set the table to be used for subsequent operations.
+
+        Args:
+            table_name (str): The name of the table to use.
+
+        Returns:
+            DatabaseManager: The current instance, allowing for method chaining.
+
+        Example:
+            >>> db.use_table("users").read().results()
+        """
         self._table_name = table_name
         return self
 
@@ -234,6 +283,24 @@ class DatabaseManager:
             raise ValueError("Unsupported database type")
 
     def read(self) -> 'DatabaseManager':
+        """
+        Read the entire contents of the currently selected table into memory.
+
+        This method reads all data from the current table and stores it in the
+        _data attribute as a pandas DataFrame.
+
+        Returns:
+            DatabaseManager: The current instance, allowing for method chaining.
+
+        Raises:
+            ValueError: If no table has been selected.
+            TableNotFoundError: If the specified table doesn't exist in the database.
+            DatabaseError: For any other database-related errors.
+            NotImplementedError: If called on a Redis database.
+
+        Example:
+            >>> db.use_table("users").read().results()
+        """
         if self._base == 'sql':
             if not self._table_name:
                 raise ValueError("Table name not set. Use .use_table() first.")
