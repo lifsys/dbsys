@@ -1,13 +1,12 @@
 """
 A library for managing database operations using SQLAlchemy and pandas.
 """
-
-from typing import Dict, Any, Optional, Union, List
-import pandas as pd
-from sqlalchemy import create_engine, text, MetaData, Table, Column
-from sqlalchemy import create_engine, exc as sa_exc
-from sqlalchemy.exc import SQLAlchemyError
 import logging
+import pandas as pd
+import json
+from typing import Dict, Any, Optional, Union, List
+from sqlalchemy import create_engine, text, MetaData, Table, exc as sa_exc
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine import Engine
 
 logging.basicConfig(level=logging.INFO)
@@ -362,8 +361,124 @@ class DatabaseManager:
             return self
         except sa_exc.SQLAlchemyError as e:
             raise DatabaseError(f"Search operation failed: {str(e)}")
+        
+    def backup(self, file_path: str, columns: Optional[List[str]] = None) -> 'DatabaseManager':
+        """
+        Backup the current table or specified columns to a JSON file.
+
+        Args:
+            file_path (str): Path where the JSON file will be saved.
+            columns (List[str], optional): List of column names to backup. If None, all columns are backed up.
+
+        Returns:
+            DatabaseManager: The current instance, allowing for method chaining.
+
+        Raises:
+            ValueError: If table name is not set or if specified columns don't exist.
+            DatabaseError: If there's an error during the database operation or file writing.
+        """
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
+
+        try:
+            # Read the table data if it hasn't been read yet
+            if self._data is None:
+                self.read()
+
+            # Filter columns if specified
+            if columns:
+                missing_columns = set(columns) - set(self._data.columns)
+                if missing_columns:
+                    raise ValueError(f"Columns not found in table: {', '.join(missing_columns)}")
+                data_to_backup = self._data[columns]
+            else:
+                data_to_backup = self._data
+
+            # Convert to JSON
+            json_data = data_to_backup.to_json(orient='records', date_format='iso')
+
+            # Ensure the directory exists
+            Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+
+            # Write to file
+            with open(file_path, 'w') as f:
+                f.write(json_data)
+
+            print(f"Backup created successfully at {file_path}")
+            return self
+
+        except (sa_exc.SQLAlchemyError, IOError) as e:
+            raise DatabaseError(f"Failed to create backup: {str(e)}")
+
+    def restore(self, file_path: str, mode: str = 'replace') -> 'DatabaseManager':
+        """
+        Restore data from a JSON file to the current table.
+
+        Args:
+            file_path (str): Path to the JSON file to restore from.
+            mode (str): How to handle existing data. Options:
+                'replace': Replace all existing data (default)
+                'append': Append to existing data
+                'upsert': Update existing rows and insert new ones
+
+        Returns:
+            DatabaseManager: The current instance, allowing for method chaining.
+
+        Raises:
+            ValueError: If table name is not set or if the file doesn't exist.
+            DatabaseError: If there's an error during the database operation or file reading.
+        """
+        if not self._table_name:
+            raise ValueError("Table name not set. Use .use_table() first.")
+
+        if not Path(file_path).exists():
+            raise ValueError(f"File not found: {file_path}")
+
+        try:
+            # Read JSON file
+            with open(file_path, 'r') as f:
+                json_data = json.load(f)
+
+            # Convert to DataFrame
+            df = pd.DataFrame(json_data)
+
+            # Restore to database based on mode
+            if mode == 'replace':
+                df.to_sql(self._table_name, self.engine, if_exists='replace', index=False)
+            elif mode == 'append':
+                df.to_sql(self._table_name, self.engine, if_exists='append', index=False)
+            elif mode == 'upsert':
+                # For upsert, we need to determine the primary key
+                metadata = MetaData()
+                table = Table(self._table_name, metadata, autoload_with=self.engine)
+                pk_columns = [key.name for key in table.primary_key]
+
+                if not pk_columns:
+                    raise ValueError("Cannot perform upsert without primary key")
+
+                # Perform upsert
+                for _, row in df.iterrows():
+                    query = f"""
+                    INSERT INTO {self._table_name} ({', '.join(df.columns)})
+                    VALUES ({', '.join([':' + col for col in df.columns])})
+                    ON CONFLICT ({', '.join(pk_columns)})
+                    DO UPDATE SET {', '.join([f"{col} = excluded.{col}" for col in df.columns if col not in pk_columns])}
+                    """
+                    with self.engine.connect() as conn:
+                        conn.execute(text(query), row.to_dict())
+                        conn.commit()
+            else:
+                raise ValueError("Invalid mode. Use 'replace', 'append', or 'upsert'.")
+
+            # Update the internal data
+            self._data = df
+
+            print(f"Data restored successfully from {file_path}")
+            return self
+
+        except (sa_exc.SQLAlchemyError, IOError, json.JSONDecodeError) as e:
+            raise DatabaseError(f"Failed to restore from backup: {str(e)}")
 
     def get_data(self) -> Optional[pd.DataFrame]:
         return self._data
-    
     
