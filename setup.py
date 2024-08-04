@@ -37,7 +37,6 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     python_requires=">=3.8",
-    python_requires=">=3.8",
     install_requires=[
         "pandas>=1.0.0",
         "sqlalchemy>=1.3.0",
