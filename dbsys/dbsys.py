@@ -2,33 +2,53 @@
 dbsys: A comprehensive library for managing database operations using SQLAlchemy and pandas.
 
 This library provides a high-level interface for common database operations, including
-reading, writing, creating tables, deleting tables, deleting columns, and deleting rows.
-It uses SQLAlchemy for database interactions and pandas for data manipulation.
+reading, writing, creating tables, deleting tables, columns, and rows. It uses SQLAlchemy
+for database interactions and pandas for efficient data manipulation.
 
 Key Features:
 - Easy-to-use interface for database operations
 - Support for multiple database types through SQLAlchemy
 - Integration with pandas for efficient data handling
 - Comprehensive error handling and custom exceptions
+- Backup and restore functionality
+- Advanced search capabilities
 
 Example usage:
     from dbsys import DatabaseManager
-    
+    import pandas as pd
+
     # Initialize the DatabaseManager
     db = DatabaseManager("sqlite:///example.db")
-    
-    # Read data from a table
-    db.use_table("users").read()
-    
-    # Write data to a table
-    import pandas as pd
-    data = pd.DataFrame({"name": ["Alice", "Bob"], "age": [30, 25]})
-    db.use_table("users").write(data)
-    
-    # Delete a specific row
-    db.use_table("users").delete_row({"name": "Alice"})
 
-For more detailed usage instructions, refer to the individual method docstrings.
+    # Create a new table with data
+    data = pd.DataFrame({"name": ["Alice", "Bob", "Charlie"], "age": [30, 25, 35]})
+    db.use_table("users").create(data)
+
+    # Read data from the table
+    db.use_table("users").read()
+    print(db.get_data())
+
+    # Update data in the table
+    new_data = pd.DataFrame({"name": ["Alice", "Bob", "Charlie"], "age": [31, 26, 36]})
+    db.use_table("users").write(new_data)
+
+    # Search for users older than 30
+    db.use_table("users").search({"age": 30}, limit=2)
+    print(db.get_data())
+
+    # Delete a specific row
+    db.use_table("users").delete_row({"name": "Bob"})
+
+    # Backup the table
+    db.use_table("users").backup("users_backup.json")
+
+    # Delete the table
+    db.use_table("users").delete_table()
+
+    # Restore the table from backup
+    db.use_table("users").restore("users_backup.json")
+
+For more detailed usage instructions, refer to the individual method docstrings and the README.md file.
 """
 import logging
 import pandas as pd
@@ -194,7 +214,8 @@ class DatabaseManager:
     A class for managing database operations using SQLAlchemy and pandas.
 
     This class provides methods for common database operations such as reading,
-    writing, creating tables, deleting tables, columns, and rows.
+    writing, creating tables, deleting tables, columns, and rows. It also includes
+    advanced features like searching, backup, and restore functionality.
 
     Attributes:
         database_url (str): The URL of the database to connect to.
@@ -203,9 +224,37 @@ class DatabaseManager:
         _data (pd.DataFrame): The data currently loaded from the database.
 
     Example:
+        # Initialize the DatabaseManager
         db = DatabaseManager("sqlite:///example.db")
+
+        # Create a new table with data
+        import pandas as pd
+        data = pd.DataFrame({"name": ["Alice", "Bob"], "age": [30, 25]})
+        db.use_table("users").create(data)
+
+        # Read data from the table
         db.use_table("users").read()
         print(db.get_data())
+
+        # Update data in the table
+        new_data = pd.DataFrame({"name": ["Alice", "Bob"], "age": [31, 26]})
+        db.use_table("users").write(new_data)
+
+        # Search for users older than 25
+        db.use_table("users").search({"age": 25}, limit=1)
+        print(db.get_data())
+
+        # Delete a specific row
+        db.use_table("users").delete_row({"name": "Bob"})
+
+        # Backup the table
+        db.use_table("users").backup("users_backup.json")
+
+        # Delete the table
+        db.use_table("users").delete_table()
+
+        # Restore the table from backup
+        db.use_table("users").restore("users_backup.json")
     """
 
     def __init__(self, database_url: str):

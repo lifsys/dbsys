@@ -1,6 +1,6 @@
 # dbsys
 
-dbsys is a comprehensive Python library for managing database operations using SQLAlchemy and pandas. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, deleting columns, and deleting rows.
+dbsys is a comprehensive Python library for managing database operations using SQLAlchemy and pandas. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, columns, and rows, as well as advanced features like searching, backup, and restore functionality.
 
 [![PyPI version](https://badge.fury.io/py/dbsys.svg)](https://badge.fury.io/py/dbsys)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -14,6 +14,7 @@ dbsys is a comprehensive Python library for managing database operations using S
 - Comprehensive error handling and custom exceptions
 - Backup and restore functionality
 - Advanced search capabilities
+- Deduplication of data
 
 ## Installation
 
@@ -33,7 +34,7 @@ This will install additional packages useful for development, such as pytest, fl
 
 ## Quick Start
 
-Here's a quick example of how to use dbsys:
+Here's a comprehensive example of how to use dbsys:
 
 ```python
 from dbsys import DatabaseManager
@@ -43,21 +44,33 @@ import pandas as pd
 db = DatabaseManager("sqlite:///example.db")
 
 # Create a sample DataFrame
-data = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie'], 'age': [30, 25, 35]})
+data = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'Alice'], 'age': [30, 25, 35, 30]})
 
 # Create a new table and write data
 db.use_table("users").create(data)
 
 # Read the table
 result = db.use_table("users").read().get_data()
+print("Original data:")
+print(result)
+
+# Deduplicate the data
+db.dedup(subset=['name'], keep='first')
+result = db.get_data()
+print("\nDeduplicated data:")
+print(result)
+
+# Update data in the table
+new_data = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie'], 'age': [31, 26, 36]})
+db.use_table("users").write(new_data)
+
+# Search for users older than 30
+result = db.use_table("users").search({"age": 30}, limit=2).get_data()
+print("\nUsers older than 30:")
 print(result)
 
 # Delete a specific row
 db.use_table("users").delete_row({"name": "Bob"})
-
-# Search for users older than 30
-result = db.use_table("users").search({"age": 30}, limit=1).get_data()
-print(result)
 
 # Backup the table
 db.use_table("users").backup("users_backup.json")
@@ -67,6 +80,11 @@ db.use_table("users").delete_table()
 
 # Restore the table from backup
 db.use_table("users").restore("users_backup.json")
+
+# Verify restored data
+result = db.use_table("users").read().get_data()
+print("\nRestored data:")
+print(result)
 ```
 
 ## API Reference
@@ -89,8 +107,20 @@ The main class for interacting with the database.
 - `backup(file_path: str, columns: Optional[List[str]] = None) -> DatabaseManager`: Backup the current table or specified columns to a JSON file.
 - `restore(file_path: str, mode: str = 'replace') -> DatabaseManager`: Restore data from a JSON file to the current table.
 - `get_data() -> Optional[pd.DataFrame]`: Get the current data stored in memory.
+- `dedup(subset: Optional[List[str]] = None, keep: str = 'first') -> DatabaseManager`: Deduplicate the current DataFrame based on specified columns.
 
 For detailed usage of each method, please refer to the docstrings in the source code.
+
+## Error Handling
+
+dbsys provides custom exceptions for better error handling:
+
+- `DatabaseError`: Base exception for database operations.
+- `TableNotFoundError`: Raised when a specified table is not found in the database.
+- `ColumnNotFoun
+
+dError`: Raised when a specified column is not found in the table.
+- `InvalidOperationError`: Raised when an invalid operation is attempted.
 
 ## Contributing
 
@@ -112,7 +142,7 @@ If you encounter any problems or have any questions, please [open an issue](http
 
 ## About Lifsys, Inc
 
-Lifsys, Inc is an AI company dedicated to developing solutions for the future. For more information, visit [www.lifsys.com](https://www.lifsys.com).
+Lifsys, Inc is an AI company dedicated to developing innovative solutions for data management and analysis. For more information, visit [www.lifsys.com](https://www.lifsys.com).
 
 ## Changelog
 
@@ -122,6 +152,7 @@ Lifsys, Inc is an AI company dedicated to developing solutions for the future. F
 - Improved error handling and type hints
 - Added backup and restore functionality
 - Implemented advanced search capabilities
+- Added deduplication feature
 
 ### 0.2.5
 - Prepared for PyPI update
