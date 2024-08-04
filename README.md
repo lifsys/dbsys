@@ -204,7 +204,7 @@ db.read()
 # ... other operations
 ```
 
-## New in version 0.2.3
+## New in version 0.2.4
 
 - Prepared for PyPI update
 - Reviewed codebase for corrections
@@ -214,6 +214,12 @@ db.read()
 For more details, see the [documentation](link_to_docs).
 
 ## Changelog
+
+### 0.2.4
+- Prepared for PyPI update
+- Reviewed codebase for corrections
+- Updated documentation and README
+- Incremented version number
 
 ### 0.2.3
 - Prepared for PyPI update
