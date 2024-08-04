@@ -4,10 +4,11 @@ A library for managing database operations using SQLAlchemy and pandas.
 
 from typing import Dict, Any, Optional, Union, List
 import pandas as pd
-from sqlalchemy import create_engine, text, MetaData, Table
+from sqlalchemy import create_engine, text, MetaData, Table, Column
 from sqlalchemy import create_engine, exc as sa_exc
 from sqlalchemy.exc import SQLAlchemyError
 import logging
+from sqlalchemy.engine import Engine
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -24,8 +25,12 @@ class ColumnNotFoundError(DatabaseError):
     """Raised when a specified column is not found in the table."""
     pass
 
+class InvalidOperationError(DatabaseError):
+    """Raised when an invalid operation is attempted."""
+    pass
+
 # Ensure all classes and functions are included in __all__
-__all__ = ['DatabaseError', 'TableNotFoundError', 'ColumnNotFoundError', 'manage_db', 'DatabaseManager']
+__all__ = ['DatabaseError', 'TableNotFoundError', 'ColumnNotFoundError', 'InvalidOperationError', 'manage_db', 'DatabaseManager']
 
 def manage_db(database_url: str, table_name: str, operation: str, data: Optional[pd.DataFrame] = None, column_name: Optional[str] = None, row_identifier: Optional[Dict[str, Any]] = None) -> Optional[pd.DataFrame]:
     """
@@ -44,7 +49,8 @@ def manage_db(database_url: str, table_name: str, operation: str, data: Optional
         after the operation, or None for delete operations.
 
     Raises:
-        ValueError: If an invalid operation is specified or if required parameters are missing.
+        InvalidOperationError: If an invalid operation is specified.
+        ValueError: If required parameters are missing for certain operations.
         DatabaseError: If there's an error during database operations.
         TableNotFoundError: If the specified table is not found in the database.
         ColumnNotFoundError: If the specified column is not found in the table.
@@ -100,20 +106,25 @@ def manage_db(database_url: str, table_name: str, operation: str, data: Optional
         
         operation = operation.lower()
         if operation not in operations:
-            raise ValueError("Invalid operation. Use 'r' for read, 'w' for write, 'c' for create, 'dt' for delete table, 'dc' for delete column, or 'dr' for delete row.")
+            raise InvalidOperationError("Invalid operation. Use 'r' for read, 'w' for write, 'c' for create, 'dt' for delete table, 'dc' for delete column, or 'dr' for delete row.")
         
         result = operations[operation]()
         
-        try:
-            return pd.read_sql_table(table_name, engine) if operation not in ['dt', 'dc', 'dr'] else None
-        except ValueError as ve:
-            if "Table lifsysdb not found" in str(ve):
-                raise TableNotFoundError(f"Table '{table_name}' not found in the database.")
-            raise
+        if isinstance(result, ValueError):
+            raise result
+        
+        if operation not in ['dt', 'dc', 'dr']:
+            try:
+                return pd.read_sql_table(table_name, engine)
+            except ValueError as ve:
+                if "Table not found" in str(ve):
+                    raise TableNotFoundError(f"Table '{table_name}' not found in the database.")
+                raise
+        return None
     except SQLAlchemyError as e:
         raise DatabaseError(f"Database operation failed: {str(e)}")
 
-def delete_table(engine, table_name: str) -> None:
+def delete_table(engine: Engine, table_name: str) -> None:
     """Delete a table from the database."""
     try:
         with engine.connect() as connection:
@@ -122,7 +133,7 @@ def delete_table(engine, table_name: str) -> None:
     except SQLAlchemyError as e:
         raise DatabaseError(f"Error deleting table {table_name}: {str(e)}")
 
-def delete_row(engine, table_name: str, row_identifier: Dict[str, Any]) -> None:
+def delete_row(engine: Engine, table_name: str, row_identifier: Dict[str, Any]) -> None:
     """Delete a specific row from a table."""
     try:
         with engine.connect() as connection:
@@ -132,7 +143,7 @@ def delete_row(engine, table_name: str, row_identifier: Dict[str, Any]) -> None:
     except SQLAlchemyError as e:
         raise DatabaseError(f"Error deleting row from table {table_name}: {str(e)}")
 
-def delete_column(engine, table_name: str, column_name: str) -> None:
+def delete_column(engine: Engine, table_name: str, column_name: str) -> None:
     """Delete a specific column from a table."""
     try:
         metadata = MetaData()
