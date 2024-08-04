@@ -146,11 +146,16 @@ Lifsys, Inc is an AI company dedicated to developing innovative solutions for da
 
 ## Changelog
 
-### 0.3.1
+### 0.3.2
 - Prepared for PyPI update
 - Reviewed codebase for corrections
 - Updated documentation and README
 - Incremented version number
+- Improved error handling in delete_row method
+- Enhanced search functionality with case-sensitive option
+
+### 0.3.1
+- Previous update details
 
 ### 0.3.0
 - Added comprehensive docstrings to all methods
