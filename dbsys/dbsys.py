@@ -1,5 +1,34 @@
 """
-A library for managing database operations using SQLAlchemy and pandas.
+dbsys: A comprehensive library for managing database operations using SQLAlchemy and pandas.
+
+This library provides a high-level interface for common database operations, including
+reading, writing, creating tables, deleting tables, deleting columns, and deleting rows.
+It uses SQLAlchemy for database interactions and pandas for data manipulation.
+
+Key Features:
+- Easy-to-use interface for database operations
+- Support for multiple database types through SQLAlchemy
+- Integration with pandas for efficient data handling
+- Comprehensive error handling and custom exceptions
+
+Example usage:
+    from dbsys import DatabaseManager
+    
+    # Initialize the DatabaseManager
+    db = DatabaseManager("sqlite:///example.db")
+    
+    # Read data from a table
+    db.use_table("users").read()
+    
+    # Write data to a table
+    import pandas as pd
+    data = pd.DataFrame({"name": ["Alice", "Bob"], "age": [30, 25]})
+    db.use_table("users").write(data)
+    
+    # Delete a specific row
+    db.use_table("users").delete_row({"name": "Alice"})
+
+For more detailed usage instructions, refer to the individual method docstrings.
 """
 import logging
 import pandas as pd
@@ -161,17 +190,68 @@ def delete_column(engine: Engine, table_name: str, column_name: str) -> None:
 
 
 class DatabaseManager:
+    """
+    A class for managing database operations using SQLAlchemy and pandas.
+
+    This class provides methods for common database operations such as reading,
+    writing, creating tables, deleting tables, columns, and rows.
+
+    Attributes:
+        database_url (str): The URL of the database to connect to.
+        engine (sqlalchemy.engine.Engine): The SQLAlchemy engine for database operations.
+        _table_name (str): The name of the currently selected table.
+        _data (pd.DataFrame): The data currently loaded from the database.
+
+    Example:
+        db = DatabaseManager("sqlite:///example.db")
+        db.use_table("users").read()
+        print(db.get_data())
+    """
+
     def __init__(self, database_url: str):
+        """
+        Initialize the DatabaseManager with a database URL.
+
+        Args:
+            database_url (str): The URL of the database to connect to.
+        """
         self.database_url = database_url
         self.engine = create_engine(database_url)
         self._table_name = None
         self._data = None
 
     def use_table(self, table_name: str) -> 'DatabaseManager':
+        """
+        Set the table to be used for subsequent operations.
+
+        Args:
+            table_name (str): The name of the table to use.
+
+        Returns:
+            DatabaseManager: The current instance, allowing for method chaining.
+
+        Example:
+            db.use_table("users").read()
+        """
         self._table_name = table_name
         return self
 
     def read(self) -> 'DatabaseManager':
+        """
+        Read the entire contents of the currently selected table into memory.
+
+        Returns:
+            DatabaseManager: The current instance, allowing for method chaining.
+
+        Raises:
+            ValueError: If no table has been selected.
+            TableNotFoundError: If the specified table does not exist in the database.
+            DatabaseError: If there's an error during the database operation.
+
+        Example:
+            db.use_table("users").read()
+            data = db.get_data()
+        """
         if not self._table_name:
             raise ValueError("Table name not set. Use .use_table() first.")
         try:

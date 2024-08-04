@@ -1,106 +1,106 @@
 # dbsys
 
-dbsys is a Python library for managing database operations using SQLAlchemy and pandas. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, deleting columns, and deleting rows.
+dbsys is a comprehensive Python library for managing database operations using SQLAlchemy and pandas. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, deleting columns, and deleting rows.
 
 [![PyPI version](https://badge.fury.io/py/dbsys.svg)](https://badge.fury.io/py/dbsys)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
+
+## Features
+
+- Easy-to-use interface for database operations
+- Support for multiple database types through SQLAlchemy
+- Integration with pandas for efficient data handling
+- Comprehensive error handling and custom exceptions
+- Backup and restore functionality
+- Advanced search capabilities
 
 ## Installation
 
 You can install the latest version of dbsys using pip:
 
-```
+```bash
 pip install --upgrade dbsys
-```
-
-For a specific version:
-
-```
-pip install dbsys==0.1.12
-```
-
-## Installation
-
-You can install dbsys using pip:
-
-```
-pip install dbsys
 ```
 
 For development purposes, you can install the package with extra dependencies:
 
-```
+```bash
 pip install dbsys[dev]
 ```
 
 This will install additional packages useful for development, such as pytest, flake8, and mypy.
 
-## Features
-
-- Read entire tables
-- Write data to tables
-- Create new tables
-- Delete tables
-- Delete specific columns
-- Delete specific rows
-
-## Usage
+## Quick Start
 
 Here's a quick example of how to use dbsys:
 
 ```python
-from dbsys import manage_db
+from dbsys import DatabaseManager
 import pandas as pd
 
+# Initialize the DatabaseManager
+db = DatabaseManager("sqlite:///example.db")
+
 # Create a sample DataFrame
-data = pd.DataFrame({'A': [1, 2, 3], 'B': ['a', 'b', 'c']})
+data = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie'], 'age': [30, 25, 35]})
 
-# Database URL
-db_url = "sqlite:///example.db"
-
-# Create a new table
-manage_db(db_url, "my_table", "c", data)
+# Create a new table and write data
+db.use_table("users").create(data)
 
 # Read the table
-result = manage_db(db_url, "my_table", "r")
+result = db.use_table("users").read().get_data()
 print(result)
 
-# Delete a column
-manage_db(db_url, "my_table", "dc", column_name="B")
+# Delete a specific row
+db.use_table("users").delete_row({"name": "Bob"})
 
-# Delete a row
-manage_db(db_url, "my_table", "dr", row_identifier={"A": 2})
+# Search for users older than 30
+result = db.use_table("users").search({"age": 30}, limit=1).get_data()
+print(result)
+
+# Backup the table
+db.use_table("users").backup("users_backup.json")
 
 # Delete the table
-manage_db(db_url, "my_table", "dt")
+db.use_table("users").delete_table()
+
+# Restore the table from backup
+db.use_table("users").restore("users_backup.json")
 ```
 
 ## API Reference
 
-### `manage_db(database_url: str, table_name: str, operation: str, data: Optional[pd.DataFrame] = None, column_name: Optional[str] = None, row_identifier: Optional[Dict[str, Any]] = None) -> Optional[pd.DataFrame]`
+### DatabaseManager
 
-Manage database tables using pandas dataframes and SQLAlchemy.
+The main class for interacting with the database.
 
-Parameters:
-- `database_url` (str): URL of the database to connect to.
-- `table_name` (str): Name of the table to operate on.
-- `operation` (str): Operation to perform. Valid options are:
-  - 'r' or 'read': Read the entire table.
-  - 'w' or 'write': Write data to the table, replacing existing data.
-  - 'c' or 'create': Create a new table with the provided data.
-  - 'dt' or 'delete table': Delete the entire table.
-  - 'dc' or 'delete column': Delete a specific column from the table.
-  - 'dr' or 'delete row': Delete a specific row from the table.
-- `data` (Optional[pd.DataFrame]): DataFrame to write or create table with. Required for 'w' and 'c' operations.
-- `column_name` (Optional[str]): Name of the column to delete. Required for 'dc' operation.
-- `row_identifier` (Optional[Dict[str, Any]]): Dictionary containing column:value pair to identify the row to delete. Required for 'dr' operation.
+#### Methods:
 
-Returns:
-- Optional[pd.DataFrame]: DataFrame representing the current state of the table after the operation, or None for delete operations.
+- `__init__(database_url: str)`: Initialize the DatabaseManager with a database URL.
+- `use_table(table_name: str) -> DatabaseManager`: Set the table to be used for subsequent operations.
+- `read() -> DatabaseManager`: Read the entire contents of the currently selected table into memory.
+- `write(data: Optional[pd.DataFrame] = None) -> DatabaseManager`: Write data to the currently selected table.
+- `create(data: pd.DataFrame) -> DatabaseManager`: Create a new table with the provided data.
+- `delete_table() -> DatabaseManager`: Delete the currently selected table.
+- `delete_column(column_name: str) -> DatabaseManager`: Delete a specific column from the currently selected table.
+- `delete_row(row_identifier: Dict[str, Any]) -> DatabaseManager`: Delete a specific row from the currently selected table.
+- `search(conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> DatabaseManager`: Search for rows in the current table that match the given conditions.
+- `backup(file_path: str, columns: Optional[List[str]] = None) -> DatabaseManager`: Backup the current table or specified columns to a JSON file.
+- `restore(file_path: str, mode: str = 'replace') -> DatabaseManager`: Restore data from a JSON file to the current table.
+- `get_data() -> Optional[pd.DataFrame]`: Get the current data stored in memory.
+
+For detailed usage of each method, please refer to the docstrings in the source code.
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
@@ -110,151 +110,23 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 If you encounter any problems or have any questions, please [open an issue](https://github.com/lifsys/dbsys/issues) on our GitHub repository.
 
-## Changelog
-
-### 0.1.12
-- Prepared for PyPI update
-- Updated documentation and README
-- Reviewed codebase for corrections
-- Incremented version number
-- Updated minimum Python version to 3.8
-
-### 0.1.11
-- Prepared for PyPI update
-- Updated documentation
-- Reviewed codebase for corrections
-- Ensured all files are up to date
-
-### 0.1.9
-- Prepared for PyPI update
-- Updated documentation
-- Reviewed codebase for corrections
-- Changed Development Status to Beta
-
-### 0.1.8
-- Prepared for PyPI update
-- Updated documentation
-- Added support for Python 3.12
-
-### 0.1.7
-- Minor code improvements and documentation updates
-- Prepared for PyPI update
-
-### 0.1.6
-- Added DatabaseManager to __init__ and __all__ lists
 ## About Lifsys, Inc
 
 Lifsys, Inc is an AI company dedicated to developing solutions for the future. For more information, visit [www.lifsys.com](https://www.lifsys.com).
-# dbsys
-
-A Python package for managing database operations.
-
-## Version
-
-Current version: 0.1.1
-
-## Changes in this version
-
-- Updated type hints in dbsys.pyi
-- Minor code improvements and bug fixes
-
-## Installation
-
-```
-pip install dbsys
-```
-
-## Usage
-
-```python
-from dbsys import DatabaseManager
-
-# Initialize the DatabaseManager
-db_manager = DatabaseManager('sqlite:///example.db')
-
-# Perform operations
-db_manager.read()
-db_manager.delete_table()
-db_manager.delete_column('column_name')
-db_manager.delete_row({'id': 1})
-```
-
-For more detailed usage instructions, please refer to the documentation.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-# dbsys
-
-A Python package for managing database operations.
-
-## Installation
-
-```
-pip install dbsys
-```
-
-## Usage
-
-```python
-from dbsys import DatabaseManager
-
-db = DatabaseManager("your_database_url")
-db.read()
-# ... other operations
-```
-
-## New in version 0.2.5
-
-- Prepared for PyPI update
-- Reviewed codebase for corrections
-- Updated documentation and README
-- Incremented version number
-
-For more details, see the [documentation](link_to_docs).
 
 ## Changelog
+
+### 0.3.0
+- Added comprehensive docstrings to all methods
+- Updated README with detailed API reference and examples
+- Improved error handling and type hints
+- Added backup and restore functionality
+- Implemented advanced search capabilities
 
 ### 0.2.5
 - Prepared for PyPI update
 - Reviewed codebase for corrections
 - Updated documentation and README
 - Incremented version number
-
-### 0.2.4
-- Prepared for PyPI update
-- Reviewed codebase for corrections
-- Updated documentation and README
-- Incremented version number
-
-### 0.2.3
-- Prepared for PyPI update
-- Reviewed codebase for corrections
-- Updated documentation and README
-- Incremented version number
-
-### 0.2.2
-- Prepared for PyPI update
-- Reviewed codebase for corrections
-- Updated documentation and README
-- Incremented version number
-
-### 0.2.1
-- Added InvalidOperationError for better error handling
-- Improved type hints in dbsys.pyi
-- Updated documentation and README
-- Minor code improvements and bug fixes
-
-### 0.2.0
-- Improved error handling
-- Added type hints
-- Updated documentation
-
-### 0.1.12
-- Prepared for PyPI update
-- Updated documentation and README
-- Reviewed codebase for corrections
-- Incremented version number
-- Updated minimum Python version to 3.8
 
 (... previous changelog entries ...)
