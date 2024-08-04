@@ -60,3 +60,27 @@ setup(
     include_package_data=True,
     package_data={"dbsys": ["py.typed"]},
 )
+from setuptools import setup, find_packages
+from dbsys import __version__
+
+setup(
+    name="dbsys",
+    version=__version__,
+    packages=find_packages(),
+    install_requires=[
+        "pandas",
+        "sqlalchemy",
+    ],
+    author="Your Name",
+    author_email="your.email@example.com",
+    description="A Python package for managing database operations",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    url="https://github.com/yourusername/dbsys",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires=">=3.6",
+)

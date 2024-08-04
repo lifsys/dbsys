@@ -184,3 +184,30 @@ For more detailed usage instructions, please refer to the documentation.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+# dbsys
+
+A Python package for managing database operations.
+
+## Installation
+
+```
+pip install dbsys
+```
+
+## Usage
+
+```python
+from dbsys import DatabaseManager
+
+db = DatabaseManager("your_database_url")
+db.read()
+# ... other operations
+```
+
+## New in version 0.2.0
+
+- Improved error handling
+- Added type hints
+- Updated documentation
+
+For more details, see the [documentation](link_to_docs).
