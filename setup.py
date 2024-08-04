@@ -14,7 +14,7 @@ with open(os.path.join("dbsys", "__init__.py"), "r") as f:
 
 setup(
     name="dbsys",
-    version="0.4.0",
+    version=version,
     author="Mark Powers",
     author_email="mpoweru@lifsys.com",
     description="A comprehensive library for managing database operations using SQLAlchemy and pandas",

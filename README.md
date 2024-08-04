@@ -3,6 +3,7 @@
 dbsys is a comprehensive Python library for managing database operations using SQLAlchemy and pandas. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, columns, and rows, as well as advanced features like searching, backup, restore functionality, and Redis support.
 
 [![PyPI version](https://badge.fury.io/py/dbsys.svg)](https://badge.fury.io/py/dbsys)
+[![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
 
@@ -198,14 +199,12 @@ Lifsys, Inc is an AI company dedicated to developing innovative solutions for da
 
 ## Changelog
 
-### 0.4.0
-- Added Redis support for pub/sub operations and key-value storage
-- Implemented new methods: pub, sub, pubsub, unsub
-- Added message storage functionality for Redis operations
-- Improved error handling and logging
-- Updated documentation to reflect new Redis capabilities
+### 0.4.1
+- Removed deprecated `manage_db` method
+- Updated documentation and README
+- Minor code improvements and bug fixes
 
-### 0.3.2
+### 0.4.0
 - Prepared for PyPI update
 - Reviewed codebase for corrections
 - Updated documentation and README
