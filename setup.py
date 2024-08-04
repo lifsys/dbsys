@@ -17,7 +17,7 @@ setup(
     version=version,
     author="Mark Powers",
     author_email="mpoweru@lifsys.com",
-    description="A library for managing database operations using SQLAlchemy and pandas",
+    description="A comprehensive library for managing database operations using SQLAlchemy and pandas",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/lifsys/dbsys",

@@ -146,6 +146,12 @@ Lifsys, Inc is an AI company dedicated to developing innovative solutions for da
 
 ## Changelog
 
+### 0.3.1
+- Prepared for PyPI update
+- Reviewed codebase for corrections
+- Updated documentation and README
+- Incremented version number
+
 ### 0.3.0
 - Added comprehensive docstrings to all methods
 - Updated README with detailed API reference and examples
