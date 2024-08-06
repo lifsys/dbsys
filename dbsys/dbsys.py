@@ -93,7 +93,7 @@ class DatabaseManager:
         else:
             raise ValueError(f"Unsupported database type: {parsed_url.scheme}")
 
-    def use_table(self, table_name: str) -> 'DatabaseManager':
+    def table(self, table_name: str) -> 'DatabaseManager':
         """
         Set the table to be used for subsequent operations.
 
