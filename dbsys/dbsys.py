@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 import json
 from typing import Dict, Any, Optional, Union, List, Callable
-from sqlalchemy import create_engine, text, MetaData, Table, exc as sa_exc
+from sqlalchemy import create_engine, text, MetaData, Table, Column, exc as sa_exc
 from sqlalchemy.engine import Engine
 from pathlib import Path
 import redis

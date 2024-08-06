@@ -199,6 +199,12 @@ Lifsys, Inc is an AI company dedicated to developing innovative solutions for da
 
 ## Changelog
 
+### 0.4.2
+- Prepared for PyPI update
+- Reviewed codebase for corrections
+- Updated documentation and README
+- Incremented version number
+
 ### 0.4.1
 - Removed deprecated `manage_db` method
 - Updated documentation and README

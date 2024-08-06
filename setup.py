@@ -101,7 +101,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "pandas>=1.0.0",
-        "sqlalchemy>=1.3.0",
+        "sqlalchemy>=1.4.0",
         "redis>=3.5.0",
     ],
     extras_require={
