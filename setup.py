@@ -82,6 +82,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/lifsys/dbsys",
     packages=find_packages(exclude=["tests*"]),
+    package_data={"dbsys": ["py.typed"]},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

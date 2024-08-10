@@ -6,12 +6,13 @@ dbsys is a comprehensive Python library for managing database operations using S
 [![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What's New in Version 0.7.1
+## What's New in Version 0.7.2
 
-- Improved Redis pub/sub functionality
+- Improved Redis pub/sub functionality with message storage
 - Enhanced error handling and logging
 - Updated documentation and examples
 - Minor bug fixes and performance improvements
+- Added support for clearing stored messages
 
 ## Features
 
