@@ -5,7 +5,6 @@ dbsys is a comprehensive Python library for managing database operations using S
 [![PyPI version](https://badge.fury.io/py/dbsys.svg)](https://badge.fury.io/py/dbsys)
 [![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
 
 ## Features
 
@@ -18,6 +17,7 @@ dbsys is a comprehensive Python library for managing database operations using S
 - Advanced search capabilities
 - Deduplication of data
 - Custom SQL query execution
+- Support for Locksys objects as connection strings
 
 ## Installation
 
@@ -46,52 +46,70 @@ import pandas as pd
 # Initialize the DatabaseManager
 db = DatabaseManager("sqlite:///example.db")
 
+# If you're using Locksys:
+# from your_locksys_module import Locksys
+# lock = Locksys("Promptsys")
+# db = DatabaseManager(lock)
+
 # Create a sample DataFrame
-data = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'Alice'], 'age': [30, 25, 35, 30]})
+data = pd.DataFrame({
+    'name': ['Alice', 'Bob', 'Charlie', 'David'],
+    'age': [30, 25, 35, 28],
+    'city': ['New York', 'San Francisco', 'London', 'Berlin']
+})
 
 # Create a new table and write data
-db.use_table("users").create(data)
+success = db.table("users").create(data)
+print(f"Table created successfully: {success}")
 
 # Read the table
-result = db.use_table("users").read().results()
+result = db.table("users").read()
 print("Original data:")
 print(result)
 
-# Deduplicate the data
-db.dedup(subset=['name'], keep='first')
-result = db.results()
-print("\nDeduplicated data:")
+# Search for users from a specific city
+result = db.table("users").search({"city": "London"})
+print("\nUsers from London:")
 print(result)
 
 # Update data in the table
-new_data = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie'], 'age': [31, 26, 36]})
-db.use_table("users").write(new_data)
+new_data = pd.DataFrame({
+    'name': ['Eve', 'Frank'],
+    'age': [22, 40],
+    'city': ['Paris', 'Tokyo']
+})
+success = db.table("users").write(new_data)
+print(f"\nData updated successfully: {success}")
 
-# Search for users older than 30
-result = db.use_table("users").search({"age": 30}, limit=2).results()
-print("\nUsers older than 30:")
+# Read the updated table
+result = db.table("users").read()
+print("\nUpdated data:")
 print(result)
 
 # Delete a specific row
-db.use_table("users").delete_row({"name": "Bob"})
-
-# Backup the table
-db.use_table("users").backup("users_backup.json")
-
-# Delete the table
-db.use_table("users").delete_table()
-
-# Restore the table from backup
-db.use_table("users").restore("users_backup.json")
-
-# Verify restored data
-result = db.use_table("users").read().results()
-print("\nRestored data:")
-print(result)
+rows_deleted = db.table("users").delete_row({"name": "Frank"})
+print(f"\nRows deleted: {rows_deleted}")
 
 # Execute a custom SQL query
-result = db.execute_query("SELECT * FROM users WHERE age > 30").results()
-print("\nCustom query result:")
+result = db.execute_query("SELECT AVG(age) as avg_age FROM users")
+print("\nAverage age:")
+print(result)
+
+# Backup the table
+success = db.table("users").backup("users_backup.json")
+print(f"\nBackup created successfully: {success}")
+
+# Delete the table
+success = db.table("users").delete_table()
+print(f"\nTable deleted successfully: {success}")
+
+# Restore the table from backup
+success = db.table("users").restore("users_backup.json")
+print(f"\nTable restored successfully: {success}")
+
+# Verify restored data
+result = db.table("users").read()
+print("\nRestored data:")
 print(result)
 ```
 
@@ -105,7 +123,8 @@ import time
 db = DatabaseManager("redis://localhost:6379/0")
 
 # Publish a message
-db.pub("Hello, Redis!", "test_channel")
+subscribers = db.pub("Hello, Redis!", "test_channel")
+print(f"Message published to {subscribers} subscribers")
 
 # Subscribe to a channel and process messages
 def message_handler(channel, message):
@@ -133,31 +152,29 @@ The main class for interacting with the database. It supports both SQL databases
 #### Constructor
 
 ```python
-DatabaseManager(connection_string: str)
+DatabaseManager(connection_string: Union[str, 'Locksys'])
 ```
 
-Initialize the DatabaseManager with a database URL.
+Initialize the DatabaseManager with a database URL or a Locksys object.
 
-- `connection_string`: The connection string for the database.
+- `connection_string`: The connection string for the database or a Locksys object.
   - For SQL databases, use SQLAlchemy connection strings.
   - For Redis, use the format: "redis://[[username]:[password]]@localhost:6379/0"
+  - For Locksys objects, ensure they have a `get_connection_string()` method.
 
 #### Methods
 
-- `use_table(table_name: str) -> DatabaseManager`
-- `read() -> DatabaseManager`
-- `write(data: Optional[pd.DataFrame] = None) -> DatabaseManager`
-- `create(data: pd.DataFrame) -> DatabaseManager`
-- `delete_table() -> DatabaseManager`
-- `delete_column(column_name: str) -> DatabaseManager`
-- `delete_row(row_identifier: Dict[str, Any]) -> DatabaseManager`
-- `search(conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> DatabaseManager`
-- `backup(file_path: str, columns: Optional[List[str]] = None) -> DatabaseManager`
-- `restore(file_path: str, mode: str = 'replace') -> DatabaseManager`
-- `results() -> Optional[pd.DataFrame]`
-- `dedup(subset: Optional[List[str]] = None, keep: str = 'first') -> DatabaseManager`
-- `execute_query(query: str, params: Optional[Dict[str, Any]] = None) -> DatabaseManager`
-- `pub(message: str, channel: str) -> DatabaseManager`
+- `table(table_name: str) -> DatabaseManager`
+- `read() -> pd.DataFrame`
+- `write(data: pd.DataFrame) -> bool`
+- `create(data: pd.DataFrame) -> bool`
+- `delete_table() -> bool`
+- `delete_row(row_identifier: Dict[str, Any]) -> int`
+- `search(conditions: Union[Dict[str, Any], str], limit: Optional[int] = None, case_sensitive: bool = False) -> pd.DataFrame`
+- `backup(file_path: str, columns: Optional[List[str]] = None) -> bool`
+- `restore(file_path: str, mode: str = 'replace') -> bool`
+- `execute_query(query: str, params: Optional[Dict[str, Any]] = None) -> Union[pd.DataFrame, int]`
+- `pub(message: str, channel: str) -> int`
 - `sub(channel: str, handler: Optional[Callable[[str, str], None]] = None, exiton: str = "") -> DatabaseManager`
 - `pubsub(pub_message: str, pub_channel: str, sub_channel: str, handler: Optional[Callable[[str, str], None]] = None, exiton: str = "CLOSE", wait: Optional[int] = None) -> DatabaseManager`
 - `unsub(channel: Optional[str] = None) -> DatabaseManager`
@@ -199,23 +216,18 @@ Lifsys, Inc is an AI company dedicated to developing innovative solutions for da
 
 ## Changelog
 
-### 0.4.2
-- Prepared for PyPI update
-- Reviewed codebase for corrections
+### 0.6.0
+- Added support for Locksys objects as connection strings
+- Updated API to remove the need for `results()` method
+- Enhanced error handling for connection string parsing
 - Updated documentation and README
-- Incremented version number
 
-### 0.4.1
-- Removed deprecated `manage_db` method
+### 0.5.0
+- Major refactoring of the codebase
+- Updated API for better consistency and ease of use
+- Enhanced Redis support with pubsub operations
+- Improved error handling and logging
+- Added case-sensitive option for search operations
 - Updated documentation and README
-- Minor code improvements and bug fixes
-
-### 0.4.0
-- Prepared for PyPI update
-- Reviewed codebase for corrections
-- Updated documentation and README
-- Incremented version number
-- Improved error handling in delete_row method
-- Enhanced search functionality with case-sensitive option
 
 (... previous changelog entries ...)
