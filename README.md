@@ -1,6 +1,6 @@
 # dbsys
 
-dbsys is a comprehensive Python library for managing database operations using SQLAlchemy and pandas. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, columns, and rows, as well as advanced features like searching, backup, restore functionality, and Redis support.
+dbsys is a comprehensive Python library for managing database operations using SQLAlchemy, pandas, and Redis. It provides a high-level interface for common database operations, including reading, writing, creating tables, deleting tables, columns, and rows, as well as advanced features like searching, backup, restore functionality, and Redis pub/sub support.
 
 [![PyPI version](https://badge.fury.io/py/dbsys.svg)](https://badge.fury.io/py/dbsys)
 [![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
@@ -14,10 +14,11 @@ dbsys is a comprehensive Python library for managing database operations using S
 - Integration with pandas for efficient data handling
 - Comprehensive error handling and custom exceptions
 - Backup and restore functionality
-- Advanced search capabilities
+- Advanced search capabilities with case-sensitive option
 - Deduplication of data
 - Custom SQL query execution
 - Support for Locksys objects as connection strings
+- Improved Redis pub/sub functionality
 
 ## Installation
 

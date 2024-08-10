@@ -79,7 +79,7 @@ setup(
     version=version,
     author="Mark Powers",
     author_email="mpoweru@lifsys.com",
-    description="A comprehensive library for managing database operations using SQLAlchemy and pandas",
+    description="A comprehensive library for managing database operations using SQLAlchemy, pandas, and Redis",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/lifsys/dbsys",
@@ -114,7 +114,7 @@ setup(
             "isort>=5.0",
         ],
     },
-    keywords="database sqlalchemy pandas orm data management",
+    keywords="database sqlalchemy pandas redis orm data management",
     project_urls={
         "Bug Tracker": "https://github.com/lifsys/dbsys/issues",
         "Documentation": "https://github.com/lifsys/dbsys/blob/main/README.md",
