@@ -58,9 +58,6 @@ setup(
         "Documentation": "https://github.com/lifsys/dbsys/blob/main/README.md",
         "Source Code": "https://github.com/lifsys/dbsys",
     },
-    include_package_data=True,
-    package_data={"dbsys": ["py.typed"]},
-)
 from setuptools import setup, find_packages
 import os
 
@@ -81,8 +78,6 @@ setup(
     author="Mark Powers",
     author_email="mpoweru@lifsys.com",
     description="A comprehensive library for managing database operations using SQLAlchemy, pandas, and Redis",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/lifsys/dbsys",
