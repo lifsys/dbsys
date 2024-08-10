@@ -37,6 +37,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     python_requires=">=3.8",
+    package_data={"dbsys": ["py.typed"]},
     install_requires=[
         "pandas>=1.0.0",
         "sqlalchemy>=1.4.0",
@@ -80,6 +81,8 @@ setup(
     author="Mark Powers",
     author_email="mpoweru@lifsys.com",
     description="A comprehensive library for managing database operations using SQLAlchemy, pandas, and Redis",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/lifsys/dbsys",
