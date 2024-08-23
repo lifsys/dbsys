@@ -53,7 +53,7 @@ class DatabaseManager:
             raise ValueError(f"Unsupported database type: {parsed_url.scheme}")
 
     def table(self, table_name: str) -> 'DatabaseManager':
-        self._table_name = table_name
+        self._table_name = f'"{table_name}"'
         return self
 
     def read(self) -> pd.DataFrame:
@@ -144,10 +144,6 @@ class DatabaseManager:
                 raise ValueError("Table name not set. Use .table() first.")
             
             try:
-                metadata = MetaData()
-                table = Table(self._table_name, metadata, autoload_with=self._engine)
-                columns = table.columns.keys()
-
                 if isinstance(conditions, dict):
                     if not conditions:
                         raise ValueError("Search conditions dictionary cannot be empty")
@@ -174,6 +170,9 @@ class DatabaseManager:
                 query = f"SELECT * FROM {self._table_name} WHERE {where_clause}"
                 if limit is not None:
                     query += f" LIMIT {limit}"
+                
+                logger.debug(f"Executing SQL: {query}")
+                logger.debug(f"With parameters: {search_conditions}")
                 
                 with self._engine.connect() as connection:
                     result = connection.execute(text(query), search_conditions)
