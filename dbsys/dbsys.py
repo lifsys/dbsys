@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import threading
 from collections import defaultdict
 import time
+from redis.exceptions import ConnectionError, TimeoutError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -276,63 +277,128 @@ class DatabaseManager:
 
     # Redis-specific methods remain largely unchanged
     def pub(self, message: str, channel: str) -> int:
-        if self._base != 'redis':
-            raise ValueError("pub method is only available for Redis")
         return self._redis_client.publish(channel, message)
 
     def sub(self, channel: str, handler: Optional[Callable[[str, str], None]] = None, exiton: str = "") -> 'DatabaseManager':
-        if self._base != 'redis':
-            raise ValueError("sub method is only available for Redis")
+        if self._pubsub is not None:
+            self.unsub()  # Unsubscribe from any existing subscriptions
 
-        if self._pubsub is None:
-            self._pubsub = self._redis_client.pubsub()
+        self._pubsub = self._redis_client.pubsub()
+        self._close_message = exiton
 
-        wrapped_handler = self._message_handler_wrapper(handler, exiton)
+        def wrapped_handler(message):
+            if message['type'] == 'message':
+                data = message['data'].decode('utf-8')
+                if data == exiton:
+                    logger.info(f"Received close message: {exiton}")
+                    self._close_flag.set()
+                elif handler:
+                    handler(channel, data)
+                else:
+                    logger.info(f"Received message on channel {channel}: {data}")
+
         self._pubsub.subscribe(**{channel: wrapped_handler})
         
-        if self._subscriber_thread is None or not self._subscriber_thread.is_alive():
-            self._subscriber_thread = threading.Thread(target=self._message_handler_loop, daemon=True)
-            self._subscriber_thread.start()
+        self._subscriber_thread = threading.Thread(target=self._message_handler_loop, daemon=True)
+        self._subscriber_thread.start()
 
         return self
 
     def pubsub(self, pub_message: str, pub_channel: str, sub_channel: str, 
                handler: Optional[Callable[[str, str], None]] = None, 
                exiton: str = "CLOSE", 
-               wait: Optional[int] = None) -> 'DatabaseManager':
-        if self._base != 'redis':
-            raise ValueError("pubsub method is only available for Redis")
+               wait: Optional[int] = None,
+               max_retries: int = 3,
+               retry_delay: float = 1.0) -> 'DatabaseManager':
+        for attempt in range(max_retries):
+            try:
+                self._close_flag.clear()
+                
+                def wrapped_handler(channel, message):
+                    if hasattr(self, '_execon_trigger') and message == self._execon_trigger:
+                        self._execon_func()
+                    if handler:
+                        handler(channel, message)
+                    else:
+                        self.message_handler(channel, message)
 
-        self._close_flag.clear()
-        self._close_message = exiton
+                self.sub(sub_channel, wrapped_handler, exiton)
+                self.pub(pub_message, pub_channel)
 
-        self.sub(sub_channel, handler, exiton)
-        publish_result = self.pub(pub_message, pub_channel)
-        logger.info(f"Published message to {publish_result} subscribers")
+                try:
+                    if wait is not None:
+                        self._close_flag.wait(timeout=wait)
+                    else:
+                        self._close_flag.wait()
+                except Exception as e:
+                    logger.error(f"Error while waiting for close flag: {str(e)}")
+                finally:
+                    self._close_flag.set()  # Ensure the flag is set even if an exception occurs
 
-        if wait is not None:
-            self._close_flag.wait(timeout=wait)
-        else:
-            self._close_flag.wait()
-
-        self.unsub(sub_channel)
-
+                break  # If we get here, the operation was successful
+            except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as e:
+                logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+                if attempt == max_retries - 1:
+                    logger.error("Max retries reached. Operation failed.")
+                    raise
+                time.sleep(retry_delay)
+            finally:
+                self.unsub(sub_channel)
+                if self._pubsub:
+                    try:
+                        self._pubsub.close()
+                    except Exception as e:
+                        logger.warning(f"Error closing pubsub connection: {str(e)}")
+                
+                # Ensure the subscriber thread is terminated
+                if self._subscriber_thread and self._subscriber_thread.is_alive():
+                    self._subscriber_thread.join(timeout=2)
+                    if self._subscriber_thread.is_alive():
+                        logger.warning("Subscriber thread did not terminate within the timeout period.")
+        
         return self
 
+    def __del__(self):
+        self.unsub()
+        if hasattr(self, '_redis_client'):
+            self._redis_client.close()
+
     def unsub(self, channel: Optional[str] = None) -> 'DatabaseManager':
-        if self._base != 'redis':
-            raise ValueError("unsub method is only available for Redis")
+        # Set the close flag to stop the message handler loop
+        self._close_flag.set()
+
+        # Wait for the subscriber thread to finish
+        if self._subscriber_thread:
+            self._subscriber_thread.join(timeout=2)  # Increased timeout for thread to finish
+            if self._subscriber_thread.is_alive():
+                logger.warning("Subscriber thread did not terminate within the timeout period.")
+            self._subscriber_thread = None
 
         if self._pubsub is not None:
-            if channel:
-                self._pubsub.unsubscribe(channel)
-            else:
-                self._pubsub.unsubscribe()
+            try:
+                # Unsubscribe from specific channel or all channels
+                if channel:
+                    self._pubsub.unsubscribe(channel)
+                else:
+                    self._pubsub.unsubscribe()
+                    self._pubsub.punsubscribe()  # Unsubscribe from all pattern subscriptions as well
+                
+                # Close the pubsub connection
+                self._pubsub.close()
+            except Exception as e:
+                logger.warning(f"Error during unsubscribe: {str(e)}")
+            finally:
+                self._pubsub = None
 
-            if not self._pubsub.channels:
-                self._subscriber_thread = None
-
+        # Clear the close flag
         self._close_flag.clear()
+
+        # Clear message history for the unsubscribed channel(s)
+        if channel:
+            self._message_history.pop(channel, None)
+        else:
+            self._message_history.clear()
+
         return self
 
     def get_stored_messages(self, channel: str) -> List[str]:
@@ -362,10 +428,30 @@ class DatabaseManager:
         return wrapper
 
     def _message_handler_loop(self):
-        for message in self._pubsub.listen():
-            if self._close_flag.is_set():
-                logger.info("Closing message handler loop")
-                break
+        try:
+            while not self._close_flag.is_set():
+                message = self._pubsub.get_message(timeout=1)
+                if message:
+                    if message['type'] == 'message':
+                        channel = message['channel'].decode('utf-8')
+                        data = message['data'].decode('utf-8')
+                        if data == self._close_message:
+                            logger.info(f"Received close message: {self._close_message}")
+                            self._close_flag.set()
+                            break
+                        else:
+                            self.message_handler(channel, data)
+        except redis.exceptions.ConnectionError as e:
+            logger.warning(f"Redis connection closed: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error in message handler loop: {str(e)}")
+        finally:
+            logger.info("Message handler loop ended")
+            if self._pubsub:
+                try:
+                    self._pubsub.close()
+                except Exception as e:
+                    logger.warning(f"Error closing pubsub connection: {str(e)}")
 
     def message_handler(self, channel: str, message: str):
         """
@@ -382,3 +468,103 @@ class DatabaseManager:
         table_name = self._table_name or "Not set"
         redis_info = f", subscribed channels: {list(self._pubsub.channels) if self._pubsub else None}" if self._base == 'redis' else ""
         return f"DatabaseManager(base={base_type}, table={table_name}{redis_info})"
+
+    def stream(self, stream_name: str) -> 'DatabaseManager':
+        if self._base != 'redis':
+            raise ValueError("Stream operations are only available for Redis")
+        self._stream_name = stream_name
+        return self
+
+    def stream_add(self, data: Dict[str, str]) -> 'DatabaseManager':
+        if not hasattr(self, '_stream_name'):
+            raise ValueError("Stream name not set. Use .stream() first.")
+        self._redis_client.xadd(self._stream_name, data)
+        return self
+
+    def stream_read(self, count: int = 100, block: int = None) -> Dict[str, List[Dict[str, Any]]]:
+        if not hasattr(self, '_stream_name'):
+            raise ValueError("Stream name not set. Use .stream() first.")
+        raw_data = self._redis_client.xread({self._stream_name: '0'}, count=count, block=block)
+        
+        # Process the raw data into a more user-friendly dictionary format
+        result = {}
+        for stream, messages in raw_data:
+            stream_name = stream.decode('utf-8')
+            result[stream_name] = []
+            for message_id, message_data in messages:
+                entry = {
+                    'id': message_id.decode('utf-8'),
+                    'data': {k.decode('utf-8'): v.decode('utf-8') for k, v in message_data.items()}
+                }
+                result[stream_name].append(entry)
+        
+        return result
+
+    def json(self, key: str) -> 'DatabaseManager':
+        if self._base != 'redis':
+            raise ValueError("JSON operations are only available for Redis")
+        self._json_key = key
+        return self
+
+    def json_set(self, data: Dict[str, Any]) -> 'DatabaseManager':
+        if not hasattr(self, '_json_key'):
+            raise ValueError("JSON key not set. Use .json() first.")
+        self._redis_client.json().set(self._json_key, '.', json.dumps(data))
+        return self
+
+    def json_get(self) -> Dict[str, Any]:
+        if not hasattr(self, '_json_key'):
+            raise ValueError("JSON key not set. Use .json() first.")
+        result = self._redis_client.json().get(self._json_key)
+        return json.loads(result) if result else None
+
+    def list(self, key: str) -> 'DatabaseManager':
+        if self._base != 'redis':
+            raise ValueError("List operations are only available for Redis")
+        self._list_key = key
+        return self
+
+    def list_push(self, *values) -> 'DatabaseManager':
+        if not hasattr(self, '_list_key'):
+            raise ValueError("List key not set. Use .list() first.")
+        self._redis_client.rpush(self._list_key, *values)
+        return self
+
+    def list_get(self, start: int = 0, end: int = -1) -> List[str]:
+        if not hasattr(self, '_list_key'):
+            raise ValueError("List key not set. Use .list() first.")
+        return self._redis_client.lrange(self._list_key, start, end)
+
+    def string(self, key: str) -> 'DatabaseManager':
+        if self._base != 'redis':
+            raise ValueError("String operations are only available for Redis")
+        self._string_key = key
+        return self
+
+    def string_set(self, value: str) -> 'DatabaseManager':
+        if not hasattr(self, '_string_key'):
+            raise ValueError("String key not set. Use .string() first.")
+        self._redis_client.set(self._string_key, value)
+        return self
+
+    def string_get(self) -> Optional[str]:
+        if not hasattr(self, '_string_key'):
+            raise ValueError("String key not set. Use .string() first.")
+        return self._redis_client.get(self._string_key)
+
+    def execon(self, trigger: str, func: Callable[..., Any], *args, **kwargs) -> 'DatabaseManager':
+        """
+        Set up a function to be executed when a specific message is received during pubsub.
+
+        Args:
+            trigger (str): The message that triggers the function execution.
+            func (Callable[..., Any]): The function to be executed when the trigger is received.
+            *args: Positional arguments to pass to the function.
+            **kwargs: Keyword arguments to pass to the function.
+
+        Returns:
+            DatabaseManager: The current instance for method chaining.
+        """
+        self._execon_trigger = trigger
+        self._execon_func = lambda: func(*args, **kwargs)
+        return self
