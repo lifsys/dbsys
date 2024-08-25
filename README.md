@@ -6,12 +6,13 @@ dbsys is a comprehensive Python library for managing database operations using S
 [![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What's New in Version 0.7.4
+## What's New in Version 0.7.5
 
-- Updated package for PyPI release
-- Improved documentation and examples
-- Minor bug fixes and performance enhancements
-- Ensured compatibility with the latest Python versions
+- Added type hints and py.typed file for better IDE support
+- Improved error handling in Redis operations
+- Enhanced documentation with more detailed examples
+- Minor bug fixes and performance optimizations
+- Updated package metadata for better PyPI representation
 
 ## Features
 
@@ -223,6 +224,19 @@ If you encounter any problems or have any questions, please [open an issue](http
 Lifsys, Inc is an AI company dedicated to developing innovative solutions for data management and analysis. For more information, visit [www.lifsys.com](https://www.lifsys.com).
 
 ## Changelog
+
+### 0.7.5
+- Added type hints and py.typed file for better IDE support
+- Improved error handling in Redis operations
+- Enhanced documentation with more detailed examples
+- Minor bug fixes and performance optimizations
+- Updated package metadata for better PyPI representation
+
+### 0.7.4
+- Updated package for PyPI release
+- Improved documentation and examples
+- Minor bug fixes and performance enhancements
+- Ensured compatibility with the latest Python versions
 
 ### 0.6.0
 - Added support for Locksys objects as connection strings
