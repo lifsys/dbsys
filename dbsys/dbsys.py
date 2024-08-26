@@ -62,10 +62,9 @@ class DatabaseManager:
             if not self._table_name:
                 raise ValueError("Table name not set. Use .table() first.")
             try:
-                return pd.read_sql_table(self._table_name, self._engine)
+                query = f"SELECT * FROM {self._table_name}"
+                return pd.read_sql_query(query, self._engine)
             except ValueError as ve:
-                if "Table not found" in str(ve):
-                    raise TableNotFoundError(f"Table '{self._table_name}' not found in the database.")
                 raise DatabaseError(f"Error reading table: {str(ve)}")
             except sa_exc.SQLAlchemyError as e:
                 raise DatabaseError(f"Database operation failed: {str(e)}")
@@ -77,9 +76,20 @@ class DatabaseManager:
             if not self._table_name:
                 raise ValueError("Table name not set. Use .table() first.")
             try:
-                data.to_sql(self._table_name, self._engine, if_exists='replace', index=False)
+                # Remove quotes from table name for to_sql method
+                table_name = self._table_name.strip('"')
+                
+                # Debug logging
+                logger.debug(f"Attempting to write to table '{table_name}'")
+                logger.debug(f"DataFrame shape: {data.shape}")
+                logger.debug(f"DataFrame columns: {data.columns.tolist()}")
+                logger.debug(f"Connection string: {self._connection_string}")
+                
+                data.to_sql(table_name, self._engine, if_exists='replace', index=False)
+                logger.info(f"Successfully wrote {len(data)} rows to table '{table_name}'")
                 return True
             except sa_exc.SQLAlchemyError as e:
+                logger.error(f"Failed to write to table '{self._table_name}': {str(e)}")
                 raise DatabaseError(f"Failed to write to table: {str(e)}")
         elif self._base == 'redis':
             raise NotImplementedError("Write operation not implemented for Redis")
@@ -89,10 +99,16 @@ class DatabaseManager:
             if not self._table_name:
                 raise ValueError("Table name not set. Use .table() first.")
             try:
-                data.to_sql(self._table_name, self._engine, if_exists='fail', index=False)
+                # Remove quotes from table name for to_sql method
+                table_name = self._table_name.strip('"')
+                data.to_sql(table_name, self._engine, if_exists='fail', index=False)
+                logger.info(f"Table '{table_name}' created successfully.")
                 return True
             except sa_exc.SQLAlchemyError as e:
-                raise DatabaseError(f"Failed to create table: {str(e)}")
+                if 'already exists' in str(e).lower():
+                    raise DatabaseError(f"Table '{table_name}' already exists. Use write() method to replace existing table.")
+                else:
+                    raise DatabaseError(f"Failed to create table '{table_name}': {str(e)}")
         elif self._base == 'redis':
             raise NotImplementedError("Create operation not implemented for Redis")
 
@@ -360,7 +376,7 @@ class DatabaseManager:
 
     def __del__(self):
         self.unsub()
-        if hasattr(self, '_redis_client'):
+        if hasattr(self, '_redis_client') and self._redis_client is not None:
             self._redis_client.close()
 
     def unsub(self, channel: Optional[str] = None) -> 'DatabaseManager':
