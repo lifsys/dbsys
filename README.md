@@ -6,13 +6,13 @@ dbsys is a comprehensive Python library for managing database operations using S
 [![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What's New in Version 0.7.5
+## What's New in Version 0.7.6
 
-- Added type hints and py.typed file for better IDE support
-- Improved error handling in Redis operations
-- Enhanced documentation with more detailed examples
-- Minor bug fixes and performance optimizations
-- Updated package metadata for better PyPI representation
+- Added new Redis-specific methods for working with streams, JSON, lists, and strings
+- Introduced the `execon` method for executing functions on specific pubsub messages
+- Enhanced error handling and retry logic in Redis operations
+- Updated documentation with examples for new Redis features
+- Minor bug fixes and performance improvements
 
 ## Features
 
@@ -225,18 +225,19 @@ Lifsys, Inc is an AI company dedicated to developing innovative solutions for da
 
 ## Changelog
 
+### 0.7.6
+- Added new Redis-specific methods for working with streams, JSON, lists, and strings
+- Introduced the `execon` method for executing functions on specific pubsub messages
+- Enhanced error handling and retry logic in Redis operations
+- Updated documentation with examples for new Redis features
+- Minor bug fixes and performance improvements
+
 ### 0.7.5
 - Added type hints and py.typed file for better IDE support
 - Improved error handling in Redis operations
 - Enhanced documentation with more detailed examples
 - Minor bug fixes and performance optimizations
 - Updated package metadata for better PyPI representation
-
-### 0.7.4
-- Updated package for PyPI release
-- Improved documentation and examples
-- Minor bug fixes and performance enhancements
-- Ensured compatibility with the latest Python versions
 
 ### 0.6.0
 - Added support for Locksys objects as connection strings
