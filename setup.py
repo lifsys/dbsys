@@ -38,7 +38,6 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Typing :: Typed",
     ],
-    long_description_content_type="text/markdown",
     python_requires=">=3.8",
     install_requires=[
         "pandas>=1.0.0",
