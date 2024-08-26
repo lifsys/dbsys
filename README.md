@@ -6,13 +6,12 @@ dbsys is a comprehensive Python library for managing database operations using S
 [![Python Versions](https://img.shields.io/pypi/pyversions/dbsys.svg)](https://pypi.org/project/dbsys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What's New in Version 0.7.6
+## What's New in Version 0.7.7
 
-- Added new Redis-specific methods for working with streams, JSON, lists, and strings
-- Introduced the `execon` method for executing functions on specific pubsub messages
-- Enhanced error handling and retry logic in Redis operations
-- Updated documentation with examples for new Redis features
-- Minor bug fixes and performance improvements
+- Updated package metadata for improved PyPI representation
+- Enhanced documentation with more detailed examples
+- Minor bug fixes and performance optimizations
+- Improved error handling in database operations
 
 ## Features
 
@@ -224,6 +223,12 @@ If you encounter any problems or have any questions, please [open an issue](http
 Lifsys, Inc is an AI company dedicated to developing innovative solutions for data management and analysis. For more information, visit [www.lifsys.com](https://www.lifsys.com).
 
 ## Changelog
+
+### 0.7.7
+- Updated package metadata for improved PyPI representation
+- Enhanced documentation with more detailed examples
+- Minor bug fixes and performance optimizations
+- Improved error handling in database operations
 
 ### 0.7.6
 - Added new Redis-specific methods for working with streams, JSON, lists, and strings
