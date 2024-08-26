@@ -40,9 +40,9 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "pandas>=1.0.0",
-        "sqlalchemy>=1.4.0",
-        "redis>=3.5.0",
+        "pandas>=1.0.0,<2.0.0",
+        "sqlalchemy>=1.4.0,<2.0.0",
+        "redis>=3.5.0,<5.0.0",
     ],
     extras_require={
         "dev": [
